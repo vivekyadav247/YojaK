@@ -201,3 +201,115 @@ exports.removeTripMember = async (req, res) => {
       .json({ message: "Error removing member", error: error.message });
   }
 };
+
+exports.leaveTrip = async (req, res) => {
+  try {
+    const trip = await Trip.findById(req.params.id);
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    } else if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    const memberIndex = trip.members.findIndex((m) =>
+      m.user.equals(req.user._id),
+    );
+    trip.members.splice(memberIndex, 1);
+    await trip.save();
+    res.json(trip.members);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error leaving trip", error: error.message });
+  }
+};
+
+exports.createChecklistofTrip = async (req, res) => {
+  try {
+    const { item, value } = req.body;
+    const trip = await Trip.findById(req.params.id);
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    } else if (
+      !trip.members.some(
+        (m) =>
+          (m.user.equals(req.user._id) && m.role === "owner") ||
+          (m.user.equals(req.user._id) && m.role === "editor"),
+      )
+    ) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    trip.checklist.set(item, value ?? false);
+    await trip.save();
+    res.status(201).json(Object.fromEntries(trip.checklist));
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error creating checklist", error: error.message });
+  }
+};
+
+exports.getChecklistByTripId = async (req, res) => {
+  try {
+    const trip = await Trip.findById(req.params.id);
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
+    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    res.json(trip.checklist);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching checklist", error: error.message });
+  }
+};
+
+exports.updateChecklistofTrip = async (req, res) => {
+  try {
+    const trip = await Trip.findById(req.params.id);
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    } else if (
+      !trip.members.some(
+        (m) =>
+          (m.user.equals(req.user._id) && m.role === "owner") ||
+          (m.user.equals(req.user._id) && m.role === "editor"),
+      )
+    ) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    const { checklist } = req.body;
+    if (checklist) trip.checklist = checklist;
+    await trip.save();
+    res.json(trip.checklist);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error updating checklist", error: error.message });
+  }
+};
+
+exports.deleteChecklistofTrip = async (req, res) => {
+  try {
+    const trip = await Trip.findById(req.params.id);
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    } else if (
+      !trip.members.some(
+        (m) =>
+          (m.user.equals(req.user._id) && m.role === "owner") ||
+          (m.user.equals(req.user._id) && m.role === "editor"),
+      )
+    ) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    trip.checklist = undefined;
+    await trip.save();
+    res.json({ message: "Checklist deleted" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error deleting checklist", error: error.message });
+  }
+};

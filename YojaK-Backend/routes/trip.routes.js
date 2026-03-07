@@ -9,6 +9,11 @@ const {
   getTripMembers,
   addTripMember,
   removeTripMember,
+  leaveTrip,
+  createChecklistofTrip,
+  getChecklistByTripId,
+  updateChecklistofTrip,
+  deleteChecklistofTrip,
 } = require("../controllers/trip.controller.js");
 
 router.post("/", authMiddleware, createTrip);
@@ -19,5 +24,17 @@ router.delete("/:id", authMiddleware, deleteTrip);
 router.get("/:id/members", authMiddleware, getTripMembers);
 router.post("/:id/members", authMiddleware, addTripMember);
 router.delete("/:id/members/:memberId", authMiddleware, removeTripMember);
-
+router.post("/:id/leave", authMiddleware, leaveTrip);
+router.post("/:id/checklist", authMiddleware, createChecklistofTrip);
+router.get("/:id/checklist", authMiddleware, getChecklistByTripId);
+router.put(
+  "/:id/checklist/:checklistId",
+  authMiddleware,
+  updateChecklistofTrip,
+);
+router.delete(
+  "/:id/checklist/:checklistId",
+  authMiddleware,
+  deleteChecklistofTrip,
+);
 module.exports = router;
