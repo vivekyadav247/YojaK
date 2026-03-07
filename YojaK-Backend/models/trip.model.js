@@ -48,6 +48,7 @@ const tripSchema = new Schema(
     checklist: {
       type: Map,
       of: Boolean,
+      default: {},
     },
     limitofPeople: {
       type: Number,

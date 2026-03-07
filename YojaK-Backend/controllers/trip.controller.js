@@ -32,6 +32,17 @@ exports.createTrip = async (req, res) => {
   }
 };
 
+exports.getAllPublicTrips = async (req, res) => {
+  try {
+    const trips = await Trip.find({ type: "public" });
+    res.json(trips);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching public trips", error: error.message });
+  }
+};
+
 exports.getTrips = async (req, res) => {
   try {
     const trips = await Trip.find({ "members.user": req.user._id })
@@ -279,10 +290,10 @@ exports.updateChecklistofTrip = async (req, res) => {
     ) {
       return res.status(403).json({ message: "Access denied" });
     }
-    const { checklist } = req.body;
-    if (checklist) trip.checklist = checklist;
+    const { value } = req.body;
+    trip.checklist.set(req.params.checklistId, value ?? false);
     await trip.save();
-    res.json(trip.checklist);
+    res.json(Object.fromEntries(trip.checklist));
   } catch (error) {
     res
       .status(500)
@@ -304,9 +315,9 @@ exports.deleteChecklistofTrip = async (req, res) => {
     ) {
       return res.status(403).json({ message: "Access denied" });
     }
-    trip.checklist = undefined;
+    trip.checklist.delete(req.params.checklistId);
     await trip.save();
-    res.json({ message: "Checklist deleted" });
+    res.json(Object.fromEntries(trip.checklist));
   } catch (error) {
     res
       .status(500)

@@ -29,6 +29,39 @@ exports.createDayItineraryofTrip = async (req, res) => {
   }
 };
 
+exports.reorderActivitiesInDayItinerary = async (req, res) => {
+  try {
+    const { activityOrder } = req.body;
+    const trip = await Trip.findById(req.params.tripId);
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
+    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    const dayItinerary = await DayItinerary.findOne({
+      _id: req.params.dayItineraryId,
+      trip: req.params.tripId,
+    });
+    if (!dayItinerary) {
+      return res.status(404).json({ message: "Day itinerary not found" });
+    }
+    const newActivities = activityOrder.map((id) =>
+      dayItinerary.activities.id(id),
+    );
+    if (newActivities.includes(null)) {
+      return res.status(400).json({ message: "Invalid activity IDs" });
+    }
+    dayItinerary.activities = newActivities;
+    await dayItinerary.save();
+    res.json(dayItinerary);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error reordering activities", error: error.message });
+  }
+};
+
 exports.getDayItineraryByTripId = async (req, res) => {
   try {
     const trip = await Trip.findById(req.params.tripId);
@@ -246,18 +279,16 @@ exports.addCommentToActivity = async (req, res) => {
     await dayItinerary.save();
     res.status(201).json(activity);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Error adding comment to activity",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Error adding comment to activity",
+      error: error.message,
+    });
   }
 };
 
 exports.getCommentsOfActivity = async (req, res) => {
   try {
-    const { activityId } = req.body;
+    const activityId = req.query.activityId;
     const trip = await Trip.findById(req.params.tripId);
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
@@ -278,12 +309,10 @@ exports.getCommentsOfActivity = async (req, res) => {
     }
     res.json(activity.comments);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Error fetching activity comments",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Error fetching activity comments",
+      error: error.message,
+    });
   }
 };
 
@@ -312,12 +341,10 @@ exports.removeCommentFromActivity = async (req, res) => {
     await dayItinerary.save();
     res.json(activity);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Error removing comment from activity",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Error removing comment from activity",
+      error: error.message,
+    });
   }
 };
 

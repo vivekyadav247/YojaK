@@ -14,10 +14,12 @@ const {
   getChecklistByTripId,
   updateChecklistofTrip,
   deleteChecklistofTrip,
+  getAllPublicTrips,
 } = require("../controllers/trip.controller.js");
 
 router.post("/", authMiddleware, createTrip);
-router.get("/", authMiddleware, getTrips);
+router.get("/", authMiddleware, getAllPublicTrips);
+router.get("/trips", authMiddleware, getTrips);
 router.get("/:id", authMiddleware, getTripById);
 router.put("/:id", authMiddleware, updateTrip);
 router.delete("/:id", authMiddleware, deleteTrip);

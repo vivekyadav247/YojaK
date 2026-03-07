@@ -15,6 +15,7 @@ const {
   addCommentToActivity,
   getCommentsOfActivity,
   removeCommentFromActivity,
+  reorderActivitiesInDayItinerary,
 } = require("../controllers/dayItinerary.controller.js");
 const authMiddleware = require("../middlewares/auth.middleware.js");
 
@@ -77,4 +78,10 @@ router.delete(
   authMiddleware,
   removeCommentFromActivity,
 );
+router.put(
+  "/trip/:tripId/dayItinerary/:dayItineraryId/activities/reorder",
+  authMiddleware,
+  reorderActivitiesInDayItinerary,
+);
+
 module.exports = router;
