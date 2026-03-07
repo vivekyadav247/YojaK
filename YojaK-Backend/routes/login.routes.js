@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const { login } = require("../control/login.control.js");
+const { login } = require("../controllers/login.controller.js");
 
 router.get("/", (req, res) => {
   res.send("Login route");

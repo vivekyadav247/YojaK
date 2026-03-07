@@ -1,6 +1,5 @@
 const User = require("../models/user.model.js");
 const bcrypt = require("bcryptjs");
-const cookies = require("cookies");
 const { generateToken } = require("../services/auth.services.js");
 
 const login = async (req, res, next) => {
@@ -18,8 +17,6 @@ const login = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
     const token = generateToken(user);
-    const cookie = new cookies(req, res);
-    cookie.set("token", token, { httpOnly: true });
     res.json({ token });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
