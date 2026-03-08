@@ -285,7 +285,7 @@ export default function TripDetail() {
               onUpdate={reload}
             />
           )}
-          {tab === "budget" && <BudgetTab tripId={tripId} />}
+          {tab === "budget" && <BudgetTab tripId={tripId} trip={trip} />}
           {tab === "documents" && <DocumentsTab tripId={tripId} />}
           {tab === "members" && (
             <MembersTab trip={trip} tripId={tripId} onUpdate={reload} />
@@ -357,6 +357,7 @@ function ItineraryTab({ tripId, trip }) {
           key={day._id}
           day={day}
           tripId={tripId}
+          trip={trip}
           onRefresh={fetchDays}
           onDelete={() =>
             setConfirmDelete({
@@ -397,7 +398,7 @@ function ItineraryTab({ tripId, trip }) {
 }
 
 /* ── Day card with activities ── */
-function DayCard({ day, tripId, onRefresh, onDelete }) {
+function DayCard({ day, tripId, trip, onRefresh, onDelete }) {
   const [open, setOpen] = useState(true);
   const [actForm, setActForm] = useState({ time: "", description: "" });
   const [adding, setAdding] = useState(false);
@@ -459,6 +460,18 @@ function DayCard({ day, tripId, onRefresh, onDelete }) {
       >
         <span className="font-semibold text-[var(--text)]">
           Day {day.dayNumber}
+          {trip?.startDate && (
+            <span className="ml-2 text-xs font-normal text-[var(--text-light)]">
+              {new Date(
+                new Date(trip.startDate).getTime() +
+                  (day.dayNumber - 1) * 86400000,
+              ).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              })}
+            </span>
+          )}
         </span>
         <div className="flex items-center gap-2">
           <button
@@ -485,10 +498,11 @@ function DayCard({ day, tripId, onRefresh, onDelete }) {
               items={day.activities.map((a) => a._id)}
               strategy={verticalListSortingStrategy}
             >
-              {day.activities.map((act) => (
+              {day.activities.map((act, idx) => (
                 <SortableActivity
                   key={act._id}
                   act={act}
+                  index={idx}
                   tripId={tripId}
                   dayId={day._id}
                   onToggle={() => toggleComplete(act)}
@@ -567,6 +581,7 @@ function DayCard({ day, tripId, onRefresh, onDelete }) {
 /* ── Sortable activity row ── */
 function SortableActivity({
   act,
+  index,
   tripId,
   dayId,
   onToggle,
@@ -583,7 +598,7 @@ function SortableActivity({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex flex-col bg-white/60 rounded-xl p-3"
+      className={`flex flex-col rounded-xl p-3 ${index % 2 === 0 ? "bg-[var(--accent)]/10 border border-[var(--accent)]/20" : "bg-[var(--primary)]/10 border border-[var(--primary)]/20"}`}
     >
       <div className="flex items-center gap-2">
         <span
@@ -832,10 +847,10 @@ function ChecklistTab({ tripId, checklist, onUpdate }) {
           No checklist items yet.
         </p>
       )}
-      {items.map(([key, val]) => (
+      {items.map(([key, val], idx) => (
         <div
           key={key}
-          className="flex items-center gap-3 bg-white/60 backdrop-blur-sm p-3 rounded-xl border border-[var(--cards)]/40"
+          className={`flex items-center gap-3 backdrop-blur-sm p-3 rounded-xl border ${idx % 2 === 0 ? "bg-[var(--accent)]/10 border-[var(--accent)]/20" : "bg-[var(--primary)]/10 border-[var(--primary)]/20"}`}
         >
           <button
             onClick={() => toggleItem(key, val)}
@@ -901,7 +916,7 @@ function ChecklistTab({ tripId, checklist, onUpdate }) {
 /* ═══════════════════════════════
    BUDGET TAB
    ═══════════════════════════════ */
-function BudgetTab({ tripId }) {
+function BudgetTab({ tripId, trip }) {
   const [budget, setBudget] = useState(null);
   const [loading, setLoading] = useState(true);
   const [expForm, setExpForm] = useState({ description: "", amount: "" });
@@ -947,6 +962,13 @@ function BudgetTab({ tripId }) {
             value={`₹${totalSpent}`}
             variant="spent"
           />
+          {(trip?.members?.length ?? 0) > 1 && (
+            <StatCard
+              label="Per Person"
+              value={`₹${(totalSpent / trip.members.length).toFixed(2)}`}
+              variant="remaining"
+            />
+          )}
         </div>
       )}
 
