@@ -59,10 +59,38 @@ export default function Profile() {
   };
 
   return (
-    <div className="max-w-xl mx-auto px-4 py-6">
+    <div className="max-w-6xl mx-auto px-4 py-4 md:py-6">
+      {/* Mobile sticky header */}
+      <div className="sticky top-0 z-20 -mx-4 px-4 pt-2 pb-3 bg-[var(--background)] md:hidden">
+        <div className="bg-white/60 backdrop-blur-xl border border-[var(--cards)] rounded-2xl px-4 py-3 flex items-center gap-3 shadow-sm shadow-black/5">
+          <img
+            src={clerkUser?.imageUrl}
+            alt="avatar"
+            className="w-9 h-9 rounded-full object-cover border-2 border-[var(--primary)]/40"
+          />
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base font-bold text-[var(--text)] leading-tight truncate">
+              {clerkUser?.fullName || "Profile"}
+            </h1>
+            <p className="text-[10px] text-[var(--text-light)] truncate">
+              {clerkUser?.primaryEmailAddress?.emailAddress}
+            </p>
+          </div>
+          {isProfileComplete ? (
+            <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 whitespace-nowrap">
+              <CheckCircle size={10} /> Complete
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 whitespace-nowrap">
+              <AlertCircle size={10} /> Incomplete
+            </span>
+          )}
+        </div>
+      </div>
+
       <div className="bg-[var(--secondary)]/10 border border-[var(--cards)]/50 rounded-3xl p-4 md:p-6 space-y-4">
-        {/* Header card */}
-        <div className="bg-white/60 backdrop-blur-sm border border-[var(--cards)] rounded-2xl p-5 flex items-center gap-4">
+        {/* Desktop header card */}
+        <div className="hidden md:flex bg-white/60 backdrop-blur-xl border border-[var(--cards)] rounded-2xl p-5 items-center gap-4">
           <img
             src={clerkUser?.imageUrl}
             alt="avatar"
@@ -95,7 +123,7 @@ export default function Profile() {
         )}
 
         {/* Form card */}
-        <div className="bg-white/60 backdrop-blur-sm border border-[var(--cards)] rounded-2xl p-5">
+        <div className="bg-white/60 backdrop-blur-xl border border-[var(--cards)] rounded-2xl p-5">
           <form onSubmit={handleSubmit} className="space-y-4">
             <Field
               label="Full Name"

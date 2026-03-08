@@ -38,7 +38,7 @@ export default function TripCard({
   return (
     <Link
       to={`/trip/${trip._id}`}
-      className="relative block bg-white/80 rounded-2xl shadow-sm border border-[var(--cards)]/40 hover:shadow-md transition-shadow p-3 sm:p-5"
+      className="relative block bg-white/60 backdrop-blur-sm rounded-2xl shadow-sm border border-[var(--cards)]/40 hover:shadow-md transition-shadow p-3 sm:p-5"
     >
       {/* Mobile-only icon button — top-right corner */}
       {onJoinRequest && (

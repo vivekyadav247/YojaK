@@ -134,10 +134,67 @@ export default function TripDetail() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6">
+    <div className="max-w-6xl mx-auto px-4 py-4 md:py-6">
+      {/* Mobile sticky header */}
+      <div className="sticky top-0 z-20 -mx-4 px-4 pt-2 pb-3 bg-[var(--background)] md:hidden">
+        <div className="bg-white/60 backdrop-blur-xl border border-[var(--cards)] rounded-2xl px-4 py-3 shadow-sm shadow-black/5 space-y-2">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-1 text-xs text-[var(--text-light)] hover:text-[var(--text)] cursor-pointer"
+            >
+              <ArrowLeft size={14} /> Back
+            </button>
+            <div className="flex items-center gap-2">
+              {amOwnerOrEditor ? (
+                <select
+                  value={trip.status}
+                  onChange={(e) => handleStatusChange(e.target.value)}
+                  disabled={statusUpdating}
+                  className={`text-[9px] font-semibold px-2 py-0.5 rounded-full capitalize whitespace-nowrap cursor-pointer border-none outline-none appearance-none pr-4 bg-no-repeat bg-[length:10px] bg-[right_3px_center] ${
+                    statusColors[trip.status] ?? statusColors.planned
+                  }`}
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                  }}
+                >
+                  <option value="planned">Planned</option>
+                  <option value="ongoing">Ongoing</option>
+                  <option value="completed">Completed</option>
+                </select>
+              ) : (
+                <span
+                  className={`text-[9px] font-semibold px-2 py-0.5 rounded-full capitalize whitespace-nowrap ${
+                    statusColors[trip.status] ?? statusColors.planned
+                  }`}
+                >
+                  {trip.status}
+                </span>
+              )}
+              {amOwner && (
+                <button
+                  onClick={() => setConfirmDeleteTrip(true)}
+                  className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 cursor-pointer"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+          <div>
+            <h1 className="text-base font-bold text-[var(--text)] leading-tight line-clamp-1">
+              {trip.title}
+            </h1>
+            <p className="text-[11px] text-[var(--text-light)] line-clamp-1">
+              {trip.destinations?.join(", ")}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-[var(--secondary)]/10 border border-[var(--cards)]/50 rounded-3xl p-4 md:p-6 space-y-4">
-        {/* Header card */}
-        <div className="bg-white/60 backdrop-blur-sm border border-[var(--cards)] rounded-2xl p-5 space-y-3">
+        {/* Desktop header card */}
+        <div className="hidden md:block bg-white/60 backdrop-blur-xl border border-[var(--cards)] rounded-2xl p-5 space-y-3">
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate(-1)}
@@ -383,7 +440,7 @@ function DayCard({ day, tripId, onRefresh, onDelete }) {
   };
 
   return (
-    <div className="bg-white/80 rounded-2xl border border-[var(--cards)]/40 overflow-hidden">
+    <div className="bg-white/60 backdrop-blur-sm rounded-2xl border border-[var(--cards)]/40 overflow-hidden">
       <div
         className="flex items-center justify-between px-4 py-3 bg-[var(--secondary)]/25 cursor-pointer"
         onClick={() => setOpen((p) => !p)}
@@ -766,7 +823,7 @@ function ChecklistTab({ tripId, checklist, onUpdate }) {
       {items.map(([key, val]) => (
         <div
           key={key}
-          className="flex items-center gap-3 bg-white/80 p-3 rounded-xl border border-[var(--cards)]/40"
+          className="flex items-center gap-3 bg-white/60 backdrop-blur-sm p-3 rounded-xl border border-[var(--cards)]/40"
         >
           <button
             onClick={() => toggleItem(key, val)}
@@ -885,7 +942,7 @@ function BudgetTab({ tripId }) {
         {(budget?.expenses ?? []).map((ex, i) => (
           <div
             key={i}
-            className="flex items-center justify-between bg-white/80 p-3 rounded-xl border border-[var(--cards)]/40 text-sm"
+            className="flex items-center justify-between bg-white/60 backdrop-blur-sm p-3 rounded-xl border border-[var(--cards)]/40 text-sm"
           >
             <span className="font-semibold text-[var(--text)]">
               ₹{ex.amount}
@@ -938,7 +995,7 @@ function StatCard({ label, value, highlight, variant }) {
   return (
     <div
       className={`flex-1 rounded-xl border p-4 text-center ${
-        variants[variant] || "bg-white/80 border-[var(--cards)]/40"
+        variants[variant] || "bg-white/60 border-[var(--cards)]/40"
       }`}
     >
       <p className="text-xs text-[var(--text-light)]">{label}</p>
@@ -1029,7 +1086,7 @@ function DocumentsTab({ tripId }) {
           {allFiles.map((f) => (
             <div
               key={f._id}
-              className="flex items-center justify-between bg-white/80 p-3 rounded-xl border border-[var(--cards)]/40 text-sm"
+              className="flex items-center justify-between bg-white/60 backdrop-blur-sm p-3 rounded-xl border border-[var(--cards)]/40 text-sm"
             >
               <a
                 href={f.url.startsWith("http") ? f.url : `${API_BASE}/${f.url}`}
@@ -1152,7 +1209,7 @@ function MembersTab({ trip, tripId, onUpdate }) {
           return (
             <div
               key={m._id ?? i}
-              className="flex items-center gap-3 bg-white/80 p-3 rounded-xl border border-[var(--cards)]/40"
+              className="flex items-center gap-3 bg-white/60 backdrop-blur-sm p-3 rounded-xl border border-[var(--cards)]/40"
             >
               {/* Avatar */}
               <div className="w-9 h-9 rounded-full bg-[var(--primary)]/20 flex items-center justify-center text-[var(--primary)] font-bold text-sm shrink-0">
@@ -1219,7 +1276,7 @@ function MembersTab({ trip, tripId, onUpdate }) {
       {trip.type !== "solo" && (
         <form
           onSubmit={handleInvite}
-          className="bg-white/80 p-4 rounded-2xl border border-[var(--cards)]/40 space-y-3"
+          className="bg-white/60 backdrop-blur-sm p-4 rounded-2xl border border-[var(--cards)]/40 space-y-3"
         >
           <p className="text-sm font-semibold text-[var(--text)]">
             Invite someone
