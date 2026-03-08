@@ -13,6 +13,12 @@ const documentSchema = new Schema(
         filename: { type: String, required: true },
         url: { type: String, required: true },
         publicId: { type: String },
+        uploadedBy: { type: Schema.Types.ObjectId, ref: "User" },
+        visibility: {
+          type: String,
+          enum: ["private", "everyone"],
+          default: "private",
+        },
         uploadedAt: { type: Date, default: Date.now },
       },
     ],

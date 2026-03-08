@@ -1084,8 +1084,13 @@ function DocumentsTab({ tripId }) {
     e.target.value = "";
   };
 
-  const deleteDoc = async (docId) => {
-    await api.delete(`/documents/${docId}`);
+  const deleteDoc = async (docId, fileId) => {
+    await api.delete(`/documents/${docId}`, { data: { fileId } });
+    fetchDocs();
+  };
+
+  const toggleVisibility = async (docId, fileId) => {
+    await api.put(`/documents/${docId}/visibility`, { fileId });
     fetchDocs();
   };
 
@@ -1131,21 +1136,47 @@ function DocumentsTab({ tripId }) {
                 <FileText size={16} />
                 {f.filename}
               </a>
-              <button
-                onClick={() =>
-                  setConfirmDelete({
-                    title: "Delete Document?",
-                    message: `Remove "${f.filename}"? This cannot be undone.`,
-                    action: () => {
-                      deleteDoc(f.docId);
-                      setConfirmDelete(null);
-                    },
-                  })
-                }
-                className="text-red-400 hover:text-red-600 cursor-pointer ml-2"
-              >
-                <Trash2 size={14} />
-              </button>
+              <div className="flex items-center gap-2 shrink-0 ml-2">
+                {f.isOwn && (
+                  <button
+                    onClick={() => toggleVisibility(f.docId, f._id)}
+                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full cursor-pointer transition-colors ${
+                      f.visibility === "everyone"
+                        ? "bg-green-100 text-green-700 hover:bg-green-200"
+                        : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                    }`}
+                    title={
+                      f.visibility === "everyone"
+                        ? "Visible to all members"
+                        : "Only you can see this"
+                    }
+                  >
+                    {f.visibility === "everyone" ? "Everyone" : "Private"}
+                  </button>
+                )}
+                {!f.isOwn && (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                    Shared
+                  </span>
+                )}
+                {f.isOwn && (
+                  <button
+                    onClick={() =>
+                      setConfirmDelete({
+                        title: "Delete Document?",
+                        message: `Remove "${f.filename}"? This cannot be undone.`,
+                        action: () => {
+                          deleteDoc(f.docId, f._id);
+                          setConfirmDelete(null);
+                        },
+                      })
+                    }
+                    className="text-red-400 hover:text-red-600 cursor-pointer"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
