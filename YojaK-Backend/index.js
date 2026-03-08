@@ -33,11 +33,7 @@ app.use(clerkMiddleware());
 
 db();
 const port = process.env.PORT || 3000;
-
-// Profile (no profileComplete gate — needed to fill it)
 app.use("/api/profile", profileRoutes);
-
-// Protected routes (require auth + profile complete)
 app.use("/api/trips", authMiddleware, profileComplete, tripRoutes);
 app.use(
   "/api/day-itineraries",
