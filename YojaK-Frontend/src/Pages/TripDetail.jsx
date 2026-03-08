@@ -83,12 +83,12 @@ export default function TripDetail() {
       </p>
 
       {/* Tabs */}
-      <div className="flex gap-4 mt-6 border-b border-[var(--cards)]">
+      <div className="flex gap-2 mt-6 border-b border-[var(--cards)] overflow-x-auto scrollbar-none">
         {tabs.map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`pb-2 text-sm font-medium capitalize cursor-pointer transition-colors ${
+            className={`pb-2 px-1 text-sm font-medium capitalize cursor-pointer transition-colors whitespace-nowrap shrink-0 ${
               tab === t
                 ? "text-[var(--primary)] border-b-2 border-[var(--primary)]"
                 : "text-[var(--text-light)]"
@@ -333,7 +333,7 @@ function DayCard({ day, tripId, onRefresh, onDelete }) {
                 setActForm((p) => ({ ...p, description: e.target.value }))
               }
               required
-              className="flex-1 px-2 py-1.5 text-sm rounded-lg border border-[var(--cards)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+              className="flex-1 px-2 py-1.5 text-sm rounded-lg border border-[var(--cards)] bg-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             />
             <button
               type="submit"
@@ -476,7 +476,7 @@ function ActivityComments({ tripId, dayId, activity, onRefresh }) {
           placeholder="Add comment…"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          className="flex-1 px-2 py-1 text-xs rounded border border-[var(--cards)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+          className="flex-1 px-2 py-1 text-xs rounded border border-[var(--cards)] bg-white/60 focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
         />
         <button
           type="submit"
@@ -548,7 +548,7 @@ function DayComments({ tripId, day, onRefresh }) {
               placeholder="Add comment…"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              className="flex-1 px-2 py-1 text-xs rounded border border-[var(--cards)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+              className="flex-1 px-2 py-1 text-xs rounded border border-[var(--cards)] bg-white/60 focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
             />
             <button
               type="submit"
