@@ -14,6 +14,11 @@ import {
   ChevronDown,
   ChevronUp,
   Send,
+  Users,
+  CalendarDays,
+  CheckSquare,
+  Wallet,
+  FolderOpen,
 } from "lucide-react";
 import {
   DndContext,
@@ -65,41 +70,69 @@ export default function TripDetail() {
       </p>
     );
 
-  const tabs = ["itinerary", "checklist", "budget", "documents", "members"];
+  const tabs = [
+    { key: "itinerary", label: "Itinerary", icon: CalendarDays },
+    { key: "checklist", label: "Checklist", icon: CheckSquare },
+    { key: "budget", label: "Budget", icon: Wallet },
+    { key: "documents", label: "Documents", icon: FolderOpen },
+    { key: "members", label: "Members", icon: Users },
+  ];
+
+  const statusColors = {
+    planned: "bg-blue-100 text-blue-700",
+    ongoing: "bg-green-100 text-green-700",
+    completed: "bg-gray-100 text-gray-500",
+  };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6">
+    <div className="max-w-4xl mx-auto px-4 py-6 space-y-5">
       {/* Header */}
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-1 text-sm text-[var(--text-light)] hover:text-[var(--text)] mb-3 cursor-pointer"
-      >
-        <ArrowLeft size={16} /> Back
-      </button>
+      <div>
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1 text-sm text-[var(--text-light)] hover:text-[var(--text)] mb-4 cursor-pointer"
+        >
+          <ArrowLeft size={16} /> Back
+        </button>
 
-      <h1 className="text-2xl font-bold text-[var(--text)]">{trip.title}</h1>
-      <p className="text-sm text-[var(--text-light)] mt-1">
-        {trip.destinations?.join(", ")} &middot; {trip.status}
-      </p>
-
-      {/* Tabs */}
-      <div className="flex gap-2 mt-6 border-b border-[var(--cards)] overflow-x-auto scrollbar-none">
-        {tabs.map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`pb-2 px-1 text-sm font-medium capitalize cursor-pointer transition-colors whitespace-nowrap shrink-0 ${
-              tab === t
-                ? "text-[var(--primary)] border-b-2 border-[var(--primary)]"
-                : "text-[var(--text-light)]"
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-[var(--text)]">
+              {trip.title}
+            </h1>
+            <p className="text-sm text-[var(--text-light)] mt-1">
+              {trip.destinations?.join(", ")}
+            </p>
+          </div>
+          <span
+            className={`text-[10px] font-semibold px-2.5 py-1 rounded-full capitalize whitespace-nowrap ${
+              statusColors[trip.status] ?? statusColors.planned
             }`}
           >
-            {t}
+            {trip.status}
+          </span>
+        </div>
+      </div>
+
+      {/* Tabs — pill style */}
+      <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+        {tabs.map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium cursor-pointer transition-all whitespace-nowrap shrink-0 ${
+              tab === key
+                ? "bg-[var(--primary)] text-white shadow-sm"
+                : "bg-white/60 text-[var(--text-light)] hover:bg-[var(--cards)]/40 hover:text-[var(--text)]"
+            }`}
+          >
+            <Icon size={15} />
+            {label}
           </button>
         ))}
       </div>
 
-      <div className="mt-4">
+      <div>
         {tab === "itinerary" && <ItineraryTab tripId={tripId} />}
         {tab === "checklist" && (
           <ChecklistTab
@@ -110,7 +143,9 @@ export default function TripDetail() {
         )}
         {tab === "budget" && <BudgetTab tripId={tripId} />}
         {tab === "documents" && <DocumentsTab tripId={tripId} />}
-        {tab === "members" && <MembersTab trip={trip} tripId={tripId} />}
+        {tab === "members" && (
+          <MembersTab trip={trip} tripId={tripId} onUpdate={reload} />
+        )}
       </div>
     </div>
   );
@@ -880,12 +915,29 @@ function DocumentsTab({ tripId }) {
 /* ═══════════════════════════════
    MEMBERS TAB
    ═══════════════════════════════ */
-function MembersTab({ trip, tripId }) {
+function MembersTab({ trip, tripId, onUpdate }) {
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
   const [msg, setMsg] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [updatingRole, setUpdatingRole] = useState(null);
 
-  const isOwner = trip.members?.some((m) => m.role === "owner" && m.user?._id);
+  useEffect(() => {
+    api
+      .get("/profile")
+      .then(({ data }) => {
+        const u = data.user ?? data;
+        setCurrentUserId(u._id);
+      })
+      .catch(() => {});
+  }, []);
+
+  const amOwner = trip.members?.some(
+    (m) =>
+      m.role === "owner" &&
+      currentUserId &&
+      (m.user?._id || m.user)?.toString() === currentUserId,
+  );
 
   const handleInvite = async (e) => {
     e.preventDefault();
@@ -905,42 +957,87 @@ function MembersTab({ trip, tripId }) {
     }
   };
 
+  const changeRole = async (memberId, newRole) => {
+    setUpdatingRole(memberId);
+    try {
+      await api.put(`/trips/${tripId}/members/${memberId}/role`, {
+        role: newRole,
+      });
+      onUpdate();
+    } catch {}
+    setUpdatingRole(null);
+  };
+
+  const removeMember = async (memberId) => {
+    try {
+      await api.delete(`/trips/${tripId}/members/${memberId}`);
+      onUpdate();
+    } catch {}
+  };
+
   const roleColors = {
     owner: "bg-[var(--primary)]/15 text-[var(--primary)]",
     editor: "bg-amber-100 text-amber-700",
-    member: "bg-gray-100 text-gray-500",
+    viewer: "bg-gray-100 text-gray-600",
   };
 
   return (
     <div className="space-y-4">
       {/* Members list */}
       <div className="space-y-2">
-        {(trip.members ?? []).map((m, i) => (
-          <div
-            key={m._id ?? i}
-            className="flex items-center gap-3 bg-white/80 p-3 rounded-xl border border-[var(--cards)]/40"
-          >
-            {/* Avatar */}
-            <div className="w-9 h-9 rounded-full bg-[var(--primary)]/20 flex items-center justify-center text-[var(--primary)] font-bold text-sm shrink-0">
-              {m.user?.name?.[0]?.toUpperCase() ?? "?"}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[var(--text)] truncate">
-                {m.user?.name ?? "Unknown"}
-              </p>
-              <p className="text-xs text-[var(--text-light)] truncate">
-                {m.user?.email ?? ""}
-              </p>
-            </div>
-            <span
-              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${
-                roleColors[m.role] ?? roleColors.member
-              }`}
+        {(trip.members ?? []).map((m, i) => {
+          const memberId = (m.user?._id || m.user)?.toString();
+          const isOwnerMember = m.role === "owner";
+          return (
+            <div
+              key={m._id ?? i}
+              className="flex items-center gap-3 bg-white/80 p-3 rounded-xl border border-[var(--cards)]/40"
             >
-              {m.role}
-            </span>
-          </div>
-        ))}
+              {/* Avatar */}
+              <div className="w-9 h-9 rounded-full bg-[var(--primary)]/20 flex items-center justify-center text-[var(--primary)] font-bold text-sm shrink-0">
+                {m.user?.name?.[0]?.toUpperCase() ?? "?"}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-[var(--text)] truncate">
+                  {m.user?.name ?? "Unknown"}
+                </p>
+                <p className="text-xs text-[var(--text-light)] truncate">
+                  {m.user?.email ?? ""}
+                </p>
+              </div>
+
+              {/* Role: if owner viewing non-owner → show dropdown */}
+              {amOwner && !isOwnerMember ? (
+                <div className="flex items-center gap-1.5">
+                  <select
+                    value={m.role}
+                    onChange={(e) => changeRole(memberId, e.target.value)}
+                    disabled={updatingRole === memberId}
+                    className="text-xs font-medium px-2 py-1 rounded-lg border border-[var(--cards)] bg-white/60 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] cursor-pointer disabled:opacity-50"
+                  >
+                    <option value="viewer">Viewer</option>
+                    <option value="editor">Editor</option>
+                  </select>
+                  <button
+                    onClick={() => removeMember(memberId)}
+                    className="p-1 rounded hover:bg-red-50 text-red-400 hover:text-red-600 cursor-pointer"
+                    title="Remove member"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <span
+                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${
+                    roleColors[m.role] ?? roleColors.viewer
+                  }`}
+                >
+                  {m.role}
+                </span>
+              )}
+            </div>
+          );
+        })}
         {trip.members?.length === 0 && (
           <p className="text-sm text-[var(--text-light)] text-center py-6">
             No members yet.

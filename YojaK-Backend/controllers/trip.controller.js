@@ -214,6 +214,37 @@ exports.removeTripMember = async (req, res) => {
   }
 };
 
+exports.updateMemberRole = async (req, res) => {
+  try {
+    const trip = await Trip.findById(req.params.id);
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    } else if (!isOwner(trip, req.user._id)) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    const { role } = req.body;
+    if (!["viewer", "editor"].includes(role)) {
+      return res.status(400).json({ message: "Invalid role" });
+    }
+    const member = trip.members.find(
+      (m) => (m.user._id || m.user).toString() === req.params.memberId,
+    );
+    if (!member) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+    if (member.role === "owner") {
+      return res.status(400).json({ message: "Cannot change owner role" });
+    }
+    member.role = role;
+    await trip.save();
+    res.json(trip.members);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error updating role", error: error.message });
+  }
+};
+
 exports.leaveTrip = async (req, res) => {
   try {
     const trip = await Trip.findById(req.params.id);

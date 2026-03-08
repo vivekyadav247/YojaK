@@ -9,6 +9,7 @@ const {
   getTripMembers,
   addTripMember,
   removeTripMember,
+  updateMemberRole,
   leaveTrip,
   createChecklistofTrip,
   getChecklistByTripId,
@@ -24,6 +25,7 @@ router.delete("/:id", profileComplete, deleteTrip);
 router.get("/:id/members", getTripMembers);
 router.post("/:id/members", profileComplete, addTripMember);
 router.delete("/:id/members/:memberId", profileComplete, removeTripMember);
+router.put("/:id/members/:memberId/role", profileComplete, updateMemberRole);
 router.post("/:id/leave", profileComplete, leaveTrip);
 router.post("/:id/checklist", profileComplete, createChecklistofTrip);
 router.get("/:id/checklist", getChecklistByTripId);
