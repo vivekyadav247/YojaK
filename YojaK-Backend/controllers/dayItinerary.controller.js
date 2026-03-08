@@ -1,6 +1,6 @@
 const DayItinerary = require("../models/dayitinerary.model");
-
 const Trip = require("../models/trip.model");
+const { isMember } = require("../utils/tripAuth");
 
 exports.createDayItineraryofTrip = async (req, res) => {
   try {
@@ -9,7 +9,7 @@ exports.createDayItineraryofTrip = async (req, res) => {
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
     }
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     const dayItinerary = new DayItinerary({
@@ -36,7 +36,7 @@ exports.reorderActivitiesInDayItinerary = async (req, res) => {
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
     }
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     const dayItinerary = await DayItinerary.findOne({
@@ -68,7 +68,7 @@ exports.getDayItineraryByTripId = async (req, res) => {
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
     }
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    if (trip.type !== "public" && !isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     const dayItineraries = await DayItinerary.find({ trip: trip._id });
@@ -88,7 +88,7 @@ exports.updateDayItineraryofTrip = async (req, res) => {
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
     }
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     const dayItinerary = await DayItinerary.findOne({
@@ -117,7 +117,7 @@ exports.deleteDayItineraryofTrip = async (req, res) => {
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
     }
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     const dayItinerary = await DayItinerary.findOne({
@@ -145,7 +145,7 @@ exports.addActivityToDayItinerary = async (req, res) => {
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
     }
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     const dayItinerary = await DayItinerary.findOne({
@@ -171,7 +171,8 @@ exports.getActivitiesOfDayItinerary = async (req, res) => {
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
     }
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    const isTripMember = isMember(trip, req.user._id);
+    if (trip.type !== "public" && !isTripMember) {
       return res.status(403).json({ message: "Access denied" });
     }
     const dayItinerary = await DayItinerary.findOne({
@@ -197,7 +198,7 @@ exports.updateActivityInDayItinerary = async (req, res) => {
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
     }
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
 
@@ -234,7 +235,7 @@ exports.removeActivityFromDayItinerary = async (req, res) => {
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
     }
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     const dayItinerary = await DayItinerary.findOne({
@@ -261,7 +262,7 @@ exports.addCommentToActivity = async (req, res) => {
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
     }
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     const dayItinerary = await DayItinerary.findOne({
@@ -293,7 +294,8 @@ exports.getCommentsOfActivity = async (req, res) => {
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
     }
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    const isTripMember = isMember(trip, req.user._id);
+    if (trip.type !== "public" && !isTripMember) {
       return res.status(403).json({ message: "Access denied" });
     }
     const dayItinerary = await DayItinerary.findOne({
@@ -323,7 +325,7 @@ exports.removeCommentFromActivity = async (req, res) => {
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
     }
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     const dayItinerary = await DayItinerary.findOne({
@@ -355,7 +357,7 @@ exports.addCommentToDayItinerary = async (req, res) => {
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
     }
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     const dayItinerary = await DayItinerary.findOne({
@@ -381,7 +383,8 @@ exports.getAllCommentsOfDayItinerary = async (req, res) => {
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
     }
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    const isTripMember = isMember(trip, req.user._id);
+    if (trip.type !== "public" && !isTripMember) {
       return res.status(403).json({ message: "Access denied" });
     }
     const dayItinerary = await DayItinerary.findOne({
@@ -406,7 +409,7 @@ exports.updateCommentInDayItinerary = async (req, res) => {
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
     }
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     const dayItinerary = await DayItinerary.findOne({
@@ -437,7 +440,7 @@ exports.removeCommentFromDayItinerary = async (req, res) => {
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
     }
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     const dayItinerary = await DayItinerary.findOne({

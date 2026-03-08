@@ -12,6 +12,7 @@ const documentSchema = new Schema(
       {
         filename: { type: String, required: true },
         url: { type: String, required: true },
+        publicId: { type: String },
         uploadedAt: { type: Date, default: Date.now },
       },
     ],

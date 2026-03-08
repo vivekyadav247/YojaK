@@ -1,0 +1,19 @@
+@import "tailwindcss";
+:root {
+  --primary: #6096B4;
+  --secondary: #93BFCF;
+  --cards: #BDCDD6;
+  --background: #EEE9DA;
+  --accent: #F59E0B;
+  --text: #1F2933;
+  --text-light: #52606D;
+  --surface: #FFFFFF;
+}
+
+body {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  background-color: var(--background);
+  color: var(--text);
+  margin: 0;
+  padding: 0;
+}

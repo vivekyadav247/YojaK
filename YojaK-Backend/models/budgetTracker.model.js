@@ -11,7 +11,7 @@ const budgetTrackerSchema = new Schema(
     },
     totalBudget: {
       type: Number,
-      required: true,
+      default: 0,
     },
     expenses: [
       {

@@ -4,8 +4,9 @@ const {
   getDocumentsByTripId,
   deleteDocument,
 } = require("../controllers/documents.controller.js");
-const authMiddleware = require("../middlewares/auth.middleware.js");
-router.post("/", authMiddleware, uploadDocument);
-router.get("/trip/:tripId", authMiddleware, getDocumentsByTripId);
-router.delete("/:id", authMiddleware, deleteDocument);
+const upload = require("../middlewares/upload.middleware.js");
+
+router.post("/", upload.array("files", 5), uploadDocument);
+router.get("/trip/:tripId", getDocumentsByTripId);
+router.delete("/:id", deleteDocument);
 module.exports = router;

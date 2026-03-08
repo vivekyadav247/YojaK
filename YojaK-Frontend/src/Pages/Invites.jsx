@@ -1,0 +1,327 @@
+import { useEffect, useState } from "react";
+import {
+  Loader2,
+  Send,
+  CheckCircle,
+  XCircle,
+  Trash2,
+  Mail,
+  UserPlus,
+} from "lucide-react";
+import api from "../lib/api";
+
+export default function Invites() {
+  const [received, setReceived] = useState([]);
+  const [sent, setSent] = useState([]);
+  const [joinRequests, setJoinRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState("received");
+
+  // Send invite form
+  const [trips, setTrips] = useState([]);
+  const [emailOrMobile, setEmailOrMobile] = useState("");
+  const [tripId, setTripId] = useState("");
+  const [sendLoading, setSendLoading] = useState(false);
+  const [sendMsg, setSendMsg] = useState(null);
+
+  useEffect(() => {
+    Promise.all([
+      api.get("/invites/received"),
+      api.get("/invites/sent"),
+      api.get("/trips/trips"),
+    ])
+      .then(([r, s, t]) => {
+        setReceived(r.data ?? []);
+        setSent(s.data ?? []);
+        const tripList = t.data.trips ?? t.data ?? [];
+        setTrips(tripList);
+        if (tripList.length) setTripId(tripList[0]._id);
+
+        // Fetch join requests for each trip the user owns
+        const ownedTrips = tripList.filter((tr) =>
+          tr.members?.some((m) => m.role === "owner"),
+        );
+        if (ownedTrips.length) {
+          Promise.all(
+            ownedTrips.map((tr) => api.get(`/join-requests/trip/${tr._id}`)),
+          )
+            .then((results) => {
+              const all = results.flatMap((res) => res.data ?? []);
+              setJoinRequests(all);
+            })
+            .catch(() => {});
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const respond = async (inviteId, status) => {
+    try {
+      await api.put("/invites/respond", { inviteId, status });
+      setReceived((prev) =>
+        prev.map((inv) => (inv._id === inviteId ? { ...inv, status } : inv)),
+      );
+    } catch {}
+  };
+
+  const respondJoinReq = async (requestId, status) => {
+    try {
+      await api.put("/join-requests/respond", { requestId, status });
+      setJoinRequests((prev) => prev.filter((jr) => jr._id !== requestId));
+    } catch {}
+  };
+
+  const deleteInvite = async (inviteId) => {
+    try {
+      await api.delete(`/invites/${inviteId}`);
+      setSent((prev) => prev.filter((inv) => inv._id !== inviteId));
+    } catch {}
+  };
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!tripId) return;
+    setSendLoading(true);
+    setSendMsg(null);
+    try {
+      const { data } = await api.post("/invites/send", {
+        emailOrMobile,
+        tripId,
+      });
+      setSent((prev) => [data, ...prev]);
+      setEmailOrMobile("");
+      setSendMsg({ type: "success", text: "Invite sent!" });
+    } catch (err) {
+      setSendMsg({
+        type: "error",
+        text: err.response?.data?.error || "Failed to send invite",
+      });
+    } finally {
+      setSendLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="animate-spin text-[var(--primary)]" size={32} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto px-4 py-6">
+      <h1 className="text-2xl font-bold text-[var(--text)] mb-6">Invites</h1>
+
+      {/* Send invite form */}
+      <form
+        onSubmit={handleSend}
+        className="bg-white/80 p-4 rounded-2xl border border-[var(--cards)]/40 mb-6 space-y-3"
+      >
+        <p className="text-sm font-semibold text-[var(--text)] flex items-center gap-2">
+          <Send size={16} /> Send an Invite
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <input
+            type="text"
+            placeholder="Email or mobile number"
+            value={emailOrMobile}
+            onChange={(e) => setEmailOrMobile(e.target.value)}
+            required
+            className="sm:col-span-1 px-3 py-2.5 rounded-lg border border-[var(--cards)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+          />
+          <select
+            value={tripId}
+            onChange={(e) => setTripId(e.target.value)}
+            className="sm:col-span-1 px-3 py-2.5 rounded-lg border border-[var(--cards)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+          >
+            {trips.map((t) => (
+              <option key={t._id} value={t._id}>
+                {t.title}
+              </option>
+            ))}
+          </select>
+          <button
+            type="submit"
+            disabled={sendLoading || !trips.length}
+            className="px-4 py-2.5 rounded-lg bg-[var(--accent)] text-white font-semibold text-sm hover:opacity-90 disabled:opacity-50 cursor-pointer"
+          >
+            {sendLoading ? "Sending…" : "Send"}
+          </button>
+        </div>
+        {sendMsg && (
+          <p
+            className={`text-xs ${sendMsg.type === "success" ? "text-green-600" : "text-red-500"}`}
+          >
+            {sendMsg.text}
+          </p>
+        )}
+      </form>
+
+      {/* Tabs */}
+      <div className="flex gap-4 border-b border-[var(--cards)] mb-4">
+        {[
+          { key: "received", label: "Received", count: received.length },
+          { key: "sent", label: "Sent", count: sent.length },
+          {
+            key: "joinRequests",
+            label: "Join Requests",
+            count: joinRequests.length,
+          },
+        ].map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`pb-2 text-sm font-medium transition-colors cursor-pointer ${
+              tab === t.key
+                ? "text-[var(--primary)] border-b-2 border-[var(--primary)]"
+                : "text-[var(--text-light)]"
+            }`}
+          >
+            {t.label} ({t.count})
+          </button>
+        ))}
+      </div>
+
+      {/* List */}
+      <div className="space-y-3">
+        {tab === "received" &&
+          (received.length === 0 ? (
+            <Empty text="No received invites" />
+          ) : (
+            received.map((inv) => (
+              <InviteRow
+                key={inv._id}
+                inv={inv}
+                type="received"
+                onRespond={respond}
+              />
+            ))
+          ))}
+        {tab === "sent" &&
+          (sent.length === 0 ? (
+            <Empty text="No sent invites" />
+          ) : (
+            sent.map((inv) => (
+              <InviteRow
+                key={inv._id}
+                inv={inv}
+                type="sent"
+                onDelete={deleteInvite}
+              />
+            ))
+          ))}
+        {tab === "joinRequests" &&
+          (joinRequests.length === 0 ? (
+            <Empty text="No pending join requests" />
+          ) : (
+            joinRequests.map((jr) => (
+              <JoinRequestRow key={jr._id} jr={jr} onRespond={respondJoinReq} />
+            ))
+          ))}
+      </div>
+    </div>
+  );
+}
+
+function InviteRow({ inv, type, onRespond, onDelete }) {
+  const person =
+    type === "received"
+      ? inv.sender?.name || inv.sender?.email || "Someone"
+      : inv.receiver?.name || inv.receiver?.email || "Someone";
+
+  const statusColors = {
+    pending: "text-amber-600 bg-amber-50",
+    accepted: "text-green-600 bg-green-50",
+    rejected: "text-red-500 bg-red-50",
+  };
+
+  return (
+    <div className="flex items-center justify-between bg-white/80 p-4 rounded-xl border border-[var(--cards)]/40">
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-[var(--text)] truncate">
+          <Mail size={14} className="inline mr-1" />
+          {type === "received" ? `From ${person}` : `To ${person}`}
+        </p>
+        <p className="text-xs text-[var(--text-light)] truncate">
+          Trip: {inv.trip?.title || inv.trip}
+        </p>
+      </div>
+      <div className="flex items-center gap-2 shrink-0 ml-3">
+        <span
+          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusColors[inv.status] ?? ""}`}
+        >
+          {inv.status}
+        </span>
+        {type === "received" && inv.status === "pending" && (
+          <>
+            <button
+              onClick={() => onRespond(inv._id, "accepted")}
+              className="p-1.5 rounded-lg hover:bg-green-50 text-green-600 cursor-pointer"
+              title="Accept"
+            >
+              <CheckCircle size={18} />
+            </button>
+            <button
+              onClick={() => onRespond(inv._id, "rejected")}
+              className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 cursor-pointer"
+              title="Reject"
+            >
+              <XCircle size={18} />
+            </button>
+          </>
+        )}
+        {type === "sent" && (
+          <button
+            onClick={() => onDelete(inv._id)}
+            className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 cursor-pointer"
+            title="Delete"
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Empty({ text }) {
+  return (
+    <p className="text-center text-sm text-[var(--text-light)] py-12">{text}</p>
+  );
+}
+
+function JoinRequestRow({ jr, onRespond }) {
+  const person = jr.sender?.name || jr.sender?.email || "Someone";
+
+  return (
+    <div className="flex items-center justify-between bg-white/80 p-4 rounded-xl border border-[var(--cards)]/40">
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-[var(--text)] truncate">
+          <UserPlus size={14} className="inline mr-1" />
+          {person} wants to join
+        </p>
+        <p className="text-xs text-[var(--text-light)] truncate">
+          Trip: {jr.trip?.title || jr.trip}
+        </p>
+      </div>
+      <div className="flex items-center gap-2 shrink-0 ml-3">
+        <button
+          onClick={() => onRespond(jr._id, "accepted")}
+          className="p-1.5 rounded-lg hover:bg-green-50 text-green-600 cursor-pointer"
+          title="Accept"
+        >
+          <CheckCircle size={18} />
+        </button>
+        <button
+          onClick={() => onRespond(jr._id, "rejected")}
+          className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 cursor-pointer"
+          title="Reject"
+        >
+          <XCircle size={18} />
+        </button>
+      </div>
+    </div>
+  );
+}

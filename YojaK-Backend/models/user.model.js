@@ -1,12 +1,15 @@
 const Schema = require("mongoose").Schema;
 const model = require("mongoose").model;
-const bcrypt = require("bcryptjs");
 
 const userSchema = new Schema(
   {
-    name: {
+    clerkId: {
       type: String,
       required: true,
+      unique: true,
+    },
+    name: {
+      type: String,
       trim: true,
       uppercase: true,
     },
@@ -16,36 +19,35 @@ const userSchema = new Schema(
       unique: true,
       trim: true,
       lowercase: true,
-      validate: {
-        validator: function (v) {
-          return /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(v);
-        },
-      },
     },
     mobileNumber: {
       type: String,
-      required: true,
       unique: true,
+      sparse: true,
       trim: true,
       validate: {
         validator: function (v) {
-          return /^\d{10}$/.test(v);
+          return !v || /^\d{10}$/.test(v);
         },
       },
     },
     age: {
       type: Number,
-      required: true,
       max: 120,
+    },
+    gender: {
+      type: String,
+      enum: ["male", "female", "other"],
+      trim: true,
+      lowercase: true,
     },
     location: {
       type: String,
-      required: true,
       trim: true,
     },
-    password: {
-      type: String,
-      required: true,
+    isProfileComplete: {
+      type: Boolean,
+      default: false,
     },
     trips: [
       {

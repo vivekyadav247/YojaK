@@ -1,22 +1,36 @@
 const Document = require("../models/documents.model");
-const Trip = require("../models/trip.model"); // ADD THIS
+const Trip = require("../models/trip.model");
+const { isMember } = require("../utils/tripAuth");
+const { cloudinary } = require("../middlewares/upload.middleware");
 
 exports.uploadDocument = async (req, res) => {
   try {
-    const { tripId, title, url } = req.body;
+    const { tripId } = req.body;
 
-    // ADD AUTH CHECK
     const trip = await Trip.findById(tripId);
     if (!trip) return res.status(404).json({ message: "Trip not found" });
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    const document = new Document({
-      tripId,
-      files: [{ filename: title, url }],
-    });
-    await document.save();
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: "No files uploaded" });
+    }
+
+    const files = req.files.map((f) => ({
+      filename: f.originalname,
+      url: f.path,
+      publicId: f.filename,
+    }));
+
+    let document = await Document.findOne({ tripId });
+    if (document) {
+      document.files.push(...files);
+      await document.save();
+    } else {
+      document = await Document.create({ tripId, files });
+    }
+
     res.status(201).json(document);
   } catch (error) {
     res
@@ -27,10 +41,10 @@ exports.uploadDocument = async (req, res) => {
 
 exports.getDocumentsByTripId = async (req, res) => {
   try {
-    // ADD AUTH CHECK
     const trip = await Trip.findById(req.params.tripId);
     if (!trip) return res.status(404).json({ message: "Trip not found" });
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    const isTripMember = isMember(trip, req.user._id);
+    if (trip.type !== "public" && !isTripMember) {
       return res.status(403).json({ message: "Access denied" });
     }
 
@@ -45,6 +59,7 @@ exports.getDocumentsByTripId = async (req, res) => {
 
 exports.deleteDocument = async (req, res) => {
   try {
+    // Delete from Cloudinary
     const document = await Document.findById(req.params.id);
     if (!document) {
       return res.status(404).json({ message: "Document not found" });
@@ -52,8 +67,17 @@ exports.deleteDocument = async (req, res) => {
 
     // ADD AUTH CHECK
     const trip = await Trip.findById(document.tripId);
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
+    }
+
+    // Remove files from Cloudinary
+    for (const file of document.files) {
+      if (file.publicId) {
+        await cloudinary.uploader
+          .destroy(file.publicId, { resource_type: "raw" })
+          .catch(() => {});
+      }
     }
 
     await Document.findByIdAndDelete(req.params.id);

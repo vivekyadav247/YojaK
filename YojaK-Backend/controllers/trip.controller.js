@@ -1,5 +1,6 @@
 const Trip = require("../models/trip.model");
 const User = require("../models/user.model");
+const { isMember, isOwnerOrEditor, isOwner } = require("../utils/tripAuth");
 
 exports.createTrip = async (req, res) => {
   try {
@@ -12,6 +13,21 @@ exports.createTrip = async (req, res) => {
       type,
       limitofPeople,
     } = req.body;
+
+    // Validate dates are not in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (new Date(startDate) < today) {
+      return res
+        .status(400)
+        .json({ message: "Start date cannot be in the past" });
+    }
+    if (new Date(endDate) < new Date(startDate)) {
+      return res
+        .status(400)
+        .json({ message: "End date cannot be before start date" });
+    }
+
     const trip = new Trip({
       title,
       destinations,
@@ -19,7 +35,7 @@ exports.createTrip = async (req, res) => {
       startDate,
       endDate,
       type,
-      limitofPeople,
+      limitofPeople: type === "solo" ? 1 : limitofPeople,
       owner: req.user._id,
       members: [{ user: req.user._id, role: "owner" }],
     });
@@ -65,7 +81,9 @@ exports.getTripById = async (req, res) => {
       .populate("dayItineraryIds");
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
-    } else if (!trip.members.some((m) => m.user._id.equals(req.user._id))) {
+    }
+    // Allow viewing public trips; private/solo trips require membership
+    if (trip.type !== "public" && !isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     res.json(trip);
@@ -81,13 +99,7 @@ exports.updateTrip = async (req, res) => {
     const trip = await Trip.findById(req.params.id);
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
-    } else if (
-      !trip.members.some(
-        (m) =>
-          (m.user.equals(req.user._id) && m.role === "owner") ||
-          (m.user.equals(req.user._id) && m.role === "editor"),
-      )
-    ) {
+    } else if (!isOwnerOrEditor(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     const {
@@ -122,11 +134,7 @@ exports.deleteTrip = async (req, res) => {
     const trip = await Trip.findById(req.params.id);
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
-    } else if (
-      !trip.members.some(
-        (m) => m.user.equals(req.user._id) && m.role === "owner",
-      )
-    ) {
+    } else if (!isOwner(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     await Trip.findByIdAndDelete(req.params.id); // Use this instead of trip.remove()
@@ -146,7 +154,8 @@ exports.getTripMembers = async (req, res) => {
     );
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
-    } else if (!trip.members.some((m) => m.user._id.equals(req.user._id))) {
+    }
+    if (trip.type !== "public" && !isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     res.json(trip.members);
@@ -162,17 +171,13 @@ exports.addTripMember = async (req, res) => {
     const trip = await Trip.findById(req.params.id);
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
-    } else if (
-      !trip.members.some(
-        (m) => m.user.equals(req.user._id) && m.role === "owner",
-      )
-    ) {
+    } else if (!isOwner(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
-    } else if (trip.members.some((m) => m.user.equals(user._id))) {
+    } else if (isMember(trip, user._id)) {
       return res.status(400).json({ message: "User already a member" });
     }
     trip.members.push({ user: user._id, role: "viewer" });
@@ -190,15 +195,11 @@ exports.removeTripMember = async (req, res) => {
     const trip = await Trip.findById(req.params.id);
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
-    } else if (
-      !trip.members.some(
-        (m) => m.user.equals(req.user._id) && m.role === "owner",
-      )
-    ) {
+    } else if (!isOwner(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     const memberIndex = trip.members.findIndex(
-      (m) => m.user.equals(req.params.memberId), // FIX: use req.params.memberId not req.body.userId
+      (m) => (m.user._id || m.user).toString() === req.params.memberId,
     );
     if (memberIndex === -1) {
       return res.status(404).json({ message: "Member not found" });
@@ -218,11 +219,11 @@ exports.leaveTrip = async (req, res) => {
     const trip = await Trip.findById(req.params.id);
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
-    } else if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    } else if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
-    const memberIndex = trip.members.findIndex((m) =>
-      m.user.equals(req.user._id),
+    const memberIndex = trip.members.findIndex(
+      (m) => (m.user._id || m.user).toString() === req.user._id.toString(),
     );
     trip.members.splice(memberIndex, 1);
     await trip.save();
@@ -240,13 +241,7 @@ exports.createChecklistofTrip = async (req, res) => {
     const trip = await Trip.findById(req.params.id);
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
-    } else if (
-      !trip.members.some(
-        (m) =>
-          (m.user.equals(req.user._id) && m.role === "owner") ||
-          (m.user.equals(req.user._id) && m.role === "editor"),
-      )
-    ) {
+    } else if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     trip.checklist.set(item, value ?? false);
@@ -265,7 +260,8 @@ exports.getChecklistByTripId = async (req, res) => {
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
     }
-    if (!trip.members.some((m) => m.user.equals(req.user._id))) {
+    const isTripMember = isMember(trip, req.user._id);
+    if (trip.type !== "public" && !isTripMember) {
       return res.status(403).json({ message: "Access denied" });
     }
     res.json(trip.checklist);
@@ -281,13 +277,7 @@ exports.updateChecklistofTrip = async (req, res) => {
     const trip = await Trip.findById(req.params.id);
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
-    } else if (
-      !trip.members.some(
-        (m) =>
-          (m.user.equals(req.user._id) && m.role === "owner") ||
-          (m.user.equals(req.user._id) && m.role === "editor"),
-      )
-    ) {
+    } else if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     const { value } = req.body;
@@ -306,13 +296,7 @@ exports.deleteChecklistofTrip = async (req, res) => {
     const trip = await Trip.findById(req.params.id);
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
-    } else if (
-      !trip.members.some(
-        (m) =>
-          (m.user.equals(req.user._id) && m.role === "owner") ||
-          (m.user.equals(req.user._id) && m.role === "editor"),
-      )
-    ) {
+    } else if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
     trip.checklist.delete(req.params.checklistId);

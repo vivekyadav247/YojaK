@@ -1,13 +1,20 @@
 const mongoose = require("mongoose");
-require("dotenv").config();
+const dns = require("dns");
+
+if (process.env.NODE_ENV !== "production") {
+  dns.setDefaultResultOrder("ipv4first");
+  dns.setServers(["8.8.8.8", "8.8.4.4"]);
+}
 
 const db = async () => {
   try {
-    await mongoose.connect(process.env.DATABASE_URL);
+    await mongoose.connect(
+      process.env.DATABASE_URL || "mongodb://127.0.0.1:27017/YojaK_DB",
+    );
     console.log("Connected to MongoDB");
   } catch (err) {
     console.error("Could not connect to MongoDB", err);
-    process.exit(1); // Exit if DB fails
+    process.exit(1);
   }
 };
 
