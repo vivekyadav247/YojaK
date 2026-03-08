@@ -115,134 +115,151 @@ export default function Invites() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
-      <h1 className="text-2xl font-bold text-[var(--text)]">Invites</h1>
-
-      {/* Send invite form */}
-      <form
-        onSubmit={handleSend}
-        className="bg-white/80 p-4 rounded-2xl border border-[var(--cards)]/40 space-y-3"
-      >
-        <p className="text-sm font-semibold text-[var(--text)] flex items-center gap-2">
-          <Send size={16} /> Send an Invite
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <input
-            type="text"
-            placeholder="Email or mobile number"
-            value={emailOrMobile}
-            onChange={(e) => setEmailOrMobile(e.target.value)}
-            required
-            className="sm:col-span-1 px-3 py-2.5 rounded-lg border border-[var(--cards)] text-sm bg-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-          />
-          <select
-            value={tripId}
-            onChange={(e) => setTripId(e.target.value)}
-            className="sm:col-span-1 px-3 py-2.5 rounded-lg border border-[var(--cards)] text-sm bg-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-          >
-            {trips.map((t) => (
-              <option key={t._id} value={t._id}>
-                {t.title}
-              </option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            disabled={sendLoading || !trips.length}
-            className="px-4 py-2.5 rounded-lg bg-[var(--accent)] text-white font-semibold text-sm hover:opacity-90 disabled:opacity-50 cursor-pointer"
-          >
-            {sendLoading ? "Sending…" : "Send"}
-          </button>
+    <div className="max-w-3xl mx-auto px-4 py-6">
+      <div className="bg-[var(--secondary)]/10 border border-[var(--cards)]/50 rounded-3xl p-4 md:p-6 space-y-4">
+        {/* Header card */}
+        <div className="bg-white/60 backdrop-blur-sm border border-[var(--cards)] rounded-2xl p-5 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/15 flex items-center justify-center">
+            <Mail size={20} className="text-[var(--primary)]" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-[var(--text)]">Invites</h1>
+            <p className="text-xs text-[var(--text-light)]">
+              {received.length} received &middot; {sent.length} sent
+            </p>
+          </div>
         </div>
-        {sendMsg && (
-          <p
-            className={`text-xs ${sendMsg.type === "success" ? "text-green-600" : "text-red-500"}`}
-          >
-            {sendMsg.text}
-          </p>
-        )}
-      </form>
 
-      {/* Tabs — pill style */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
-        {[
-          {
-            key: "received",
-            label: "Received",
-            count: received.length,
-            icon: Inbox,
-          },
-          {
-            key: "sent",
-            label: "Sent",
-            count: sent.length,
-            icon: ArrowUpRight,
-          },
-          {
-            key: "joinRequests",
-            label: "Join Requests",
-            count: joinRequests.length,
-            icon: Users,
-          },
-        ].map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium cursor-pointer transition-all whitespace-nowrap shrink-0 ${
-              tab === t.key
-                ? "bg-[var(--primary)] text-white shadow-sm"
-                : "bg-white/60 text-[var(--text-light)] hover:bg-[var(--cards)]/40 hover:text-[var(--text)]"
-            }`}
-          >
-            <t.icon size={15} />
-            {t.label}
-            <span
-              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                tab === t.key ? "bg-white/25" : "bg-[var(--cards)]/40"
+        {/* Send invite form */}
+        <form
+          onSubmit={handleSend}
+          className="bg-white/80 p-4 rounded-2xl border border-[var(--cards)]/40 space-y-3"
+        >
+          <p className="text-sm font-semibold text-[var(--text)] flex items-center gap-2">
+            <Send size={16} /> Send an Invite
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <input
+              type="text"
+              placeholder="Email or mobile number"
+              value={emailOrMobile}
+              onChange={(e) => setEmailOrMobile(e.target.value)}
+              required
+              className="sm:col-span-1 px-3 py-2.5 rounded-lg border border-[var(--cards)] text-sm bg-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            />
+            <select
+              value={tripId}
+              onChange={(e) => setTripId(e.target.value)}
+              className="sm:col-span-1 px-3 py-2.5 rounded-lg border border-[var(--cards)] text-sm bg-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            >
+              {trips.map((t) => (
+                <option key={t._id} value={t._id}>
+                  {t.title}
+                </option>
+              ))}
+            </select>
+            <button
+              type="submit"
+              disabled={sendLoading || !trips.length}
+              className="px-4 py-2.5 rounded-lg bg-[var(--accent)] text-white font-semibold text-sm hover:opacity-90 disabled:opacity-50 cursor-pointer"
+            >
+              {sendLoading ? "Sending…" : "Send"}
+            </button>
+          </div>
+          {sendMsg && (
+            <p
+              className={`text-xs ${sendMsg.type === "success" ? "text-green-600" : "text-red-500"}`}
+            >
+              {sendMsg.text}
+            </p>
+          )}
+        </form>
+
+        {/* Tabs — pill style */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+          {[
+            {
+              key: "received",
+              label: "Received",
+              count: received.length,
+              icon: Inbox,
+            },
+            {
+              key: "sent",
+              label: "Sent",
+              count: sent.length,
+              icon: ArrowUpRight,
+            },
+            {
+              key: "joinRequests",
+              label: "Join Requests",
+              count: joinRequests.length,
+              icon: Users,
+            },
+          ].map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium cursor-pointer transition-all whitespace-nowrap shrink-0 ${
+                tab === t.key
+                  ? "bg-[var(--primary)] text-white shadow-sm"
+                  : "bg-white/60 text-[var(--text-light)] hover:bg-[var(--cards)]/40 hover:text-[var(--text)]"
               }`}
             >
-              {t.count}
-            </span>
-          </button>
-        ))}
-      </div>
+              <t.icon size={15} />
+              {t.label}
+              <span
+                className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                  tab === t.key ? "bg-white/25" : "bg-[var(--cards)]/40"
+                }`}
+              >
+                {t.count}
+              </span>
+            </button>
+          ))}
+        </div>
 
-      {/* List */}
-      <div className="space-y-3">
-        {tab === "received" &&
-          (received.length === 0 ? (
-            <Empty text="No received invites" />
-          ) : (
-            received.map((inv) => (
-              <InviteRow
-                key={inv._id}
-                inv={inv}
-                type="received"
-                onRespond={respond}
-              />
-            ))
-          ))}
-        {tab === "sent" &&
-          (sent.length === 0 ? (
-            <Empty text="No sent invites" />
-          ) : (
-            sent.map((inv) => (
-              <InviteRow
-                key={inv._id}
-                inv={inv}
-                type="sent"
-                onDelete={deleteInvite}
-              />
-            ))
-          ))}
-        {tab === "joinRequests" &&
-          (joinRequests.length === 0 ? (
-            <Empty text="No pending join requests" />
-          ) : (
-            joinRequests.map((jr) => (
-              <JoinRequestRow key={jr._id} jr={jr} onRespond={respondJoinReq} />
-            ))
-          ))}
+        {/* List */}
+        <div className="space-y-3">
+          {tab === "received" &&
+            (received.length === 0 ? (
+              <Empty text="No received invites" />
+            ) : (
+              received.map((inv) => (
+                <InviteRow
+                  key={inv._id}
+                  inv={inv}
+                  type="received"
+                  onRespond={respond}
+                />
+              ))
+            ))}
+          {tab === "sent" &&
+            (sent.length === 0 ? (
+              <Empty text="No sent invites" />
+            ) : (
+              sent.map((inv) => (
+                <InviteRow
+                  key={inv._id}
+                  inv={inv}
+                  type="sent"
+                  onDelete={deleteInvite}
+                />
+              ))
+            ))}
+          {tab === "joinRequests" &&
+            (joinRequests.length === 0 ? (
+              <Empty text="No pending join requests" />
+            ) : (
+              joinRequests.map((jr) => (
+                <JoinRequestRow
+                  key={jr._id}
+                  jr={jr}
+                  onRespond={respondJoinReq}
+                />
+              ))
+            ))}
+        </div>
       </div>
     </div>
   );

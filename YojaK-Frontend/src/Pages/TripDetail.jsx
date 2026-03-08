@@ -86,67 +86,69 @@ export default function TripDetail() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 space-y-5">
-      {/* Header */}
-      <div>
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-1 text-sm text-[var(--text-light)] hover:text-[var(--text)] mb-4 cursor-pointer"
-        >
-          <ArrowLeft size={16} /> Back
-        </button>
-
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-[var(--text)]">
-              {trip.title}
-            </h1>
-            <p className="text-sm text-[var(--text-light)] mt-1">
-              {trip.destinations?.join(", ")}
-            </p>
-          </div>
-          <span
-            className={`text-[10px] font-semibold px-2.5 py-1 rounded-full capitalize whitespace-nowrap ${
-              statusColors[trip.status] ?? statusColors.planned
-            }`}
-          >
-            {trip.status}
-          </span>
-        </div>
-      </div>
-
-      {/* Tabs — pill style */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
-        {tabs.map(({ key, label, icon: Icon }) => (
+    <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="bg-[var(--secondary)]/10 border border-[var(--cards)]/50 rounded-3xl p-4 md:p-6 space-y-4">
+        {/* Header card */}
+        <div className="bg-white/60 backdrop-blur-sm border border-[var(--cards)] rounded-2xl p-5 space-y-3">
           <button
-            key={key}
-            onClick={() => setTab(key)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium cursor-pointer transition-all whitespace-nowrap shrink-0 ${
-              tab === key
-                ? "bg-[var(--primary)] text-white shadow-sm"
-                : "bg-white/60 text-[var(--text-light)] hover:bg-[var(--cards)]/40 hover:text-[var(--text)]"
-            }`}
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-1 text-sm text-[var(--text-light)] hover:text-[var(--text)] cursor-pointer"
           >
-            <Icon size={15} />
-            {label}
+            <ArrowLeft size={16} /> Back
           </button>
-        ))}
-      </div>
 
-      <div>
-        {tab === "itinerary" && <ItineraryTab tripId={tripId} />}
-        {tab === "checklist" && (
-          <ChecklistTab
-            tripId={tripId}
-            checklist={trip.checklist}
-            onUpdate={reload}
-          />
-        )}
-        {tab === "budget" && <BudgetTab tripId={tripId} />}
-        {tab === "documents" && <DocumentsTab tripId={tripId} />}
-        {tab === "members" && (
-          <MembersTab trip={trip} tripId={tripId} onUpdate={reload} />
-        )}
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-[var(--text)]">
+                {trip.title}
+              </h1>
+              <p className="text-sm text-[var(--text-light)] mt-1">
+                {trip.destinations?.join(", ")}
+              </p>
+            </div>
+            <span
+              className={`text-[10px] font-semibold px-2.5 py-1 rounded-full capitalize whitespace-nowrap ${
+                statusColors[trip.status] ?? statusColors.planned
+              }`}
+            >
+              {trip.status}
+            </span>
+          </div>
+        </div>
+
+        {/* Tabs — pill style */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+          {tabs.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium cursor-pointer transition-all whitespace-nowrap shrink-0 ${
+                tab === key
+                  ? "bg-[var(--primary)] text-white shadow-sm"
+                  : "bg-white/60 text-[var(--text-light)] hover:bg-[var(--cards)]/40 hover:text-[var(--text)]"
+              }`}
+            >
+              <Icon size={15} />
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div>
+          {tab === "itinerary" && <ItineraryTab tripId={tripId} />}
+          {tab === "checklist" && (
+            <ChecklistTab
+              tripId={tripId}
+              checklist={trip.checklist}
+              onUpdate={reload}
+            />
+          )}
+          {tab === "budget" && <BudgetTab tripId={tripId} />}
+          {tab === "documents" && <DocumentsTab tripId={tripId} />}
+          {tab === "members" && (
+            <MembersTab trip={trip} tripId={tripId} onUpdate={reload} />
+          )}
+        </div>
       </div>
     </div>
   );

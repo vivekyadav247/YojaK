@@ -98,67 +98,69 @@ export default function Home() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 space-y-5">
-      {/* Header card */}
-      <div className="bg-white/60 backdrop-blur-sm border border-[var(--cards)] rounded-2xl p-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/15 flex items-center justify-center">
-            <Globe size={20} className="text-[var(--primary)]" />
+    <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="bg-[var(--secondary)]/10 border border-[var(--cards)]/50 rounded-3xl p-4 md:p-6 space-y-4">
+        {/* Header card */}
+        <div className="bg-white/60 backdrop-blur-sm border border-[var(--cards)] rounded-2xl p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/15 flex items-center justify-center">
+              <Globe size={20} className="text-[var(--primary)]" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-[var(--text)]">
+                Public Trips
+              </h1>
+              <p className="text-xs text-[var(--text-light)]">
+                {trips.length} {trips.length === 1 ? "trip" : "trips"} available
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-[var(--text)]">
-              Public Trips
-            </h1>
-            <p className="text-xs text-[var(--text-light)]">
-              {trips.length} {trips.length === 1 ? "trip" : "trips"} available
-            </p>
-          </div>
+          <button
+            onClick={handleCreateClick}
+            disabled={isActive === false}
+            title={
+              isActive === false
+                ? "Complete your profile first"
+                : "Create a new trip"
+            }
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+          >
+            <Plus size={18} />
+            <span className="hidden sm:inline">Create Trip</span>
+          </button>
         </div>
-        <button
-          onClick={handleCreateClick}
-          disabled={isActive === false}
-          title={
-            isActive === false
-              ? "Complete your profile first"
-              : "Create a new trip"
-          }
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-        >
-          <Plus size={18} />
-          <span className="hidden sm:inline">Create Trip</span>
-        </button>
+
+        {isActive === false && (
+          <p className="mb-4 text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3">
+            Complete your profile to create trips.
+          </p>
+        )}
+
+        {trips.length === 0 ? (
+          <p className="text-center text-[var(--text-light)] mt-20">
+            No public trips yet. Be the first to create one!
+          </p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {trips.map((t) => (
+              <TripCard
+                key={t._id}
+                trip={t}
+                joinStatus={joinMap[t._id]}
+                onJoinRequest={handleJoinRequest}
+                joinLoading={joinLoadingId === t._id}
+              />
+            ))}
+          </div>
+        )}
+
+        {showModal && (
+          <CreateTripModal
+            onClose={() => setShowModal(false)}
+            onCreated={handleCreated}
+          />
+        )}
       </div>
-
-      {isActive === false && (
-        <p className="mb-4 text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3">
-          Complete your profile to create trips.
-        </p>
-      )}
-
-      {trips.length === 0 ? (
-        <p className="text-center text-[var(--text-light)] mt-20">
-          No public trips yet. Be the first to create one!
-        </p>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {trips.map((t) => (
-            <TripCard
-              key={t._id}
-              trip={t}
-              joinStatus={joinMap[t._id]}
-              onJoinRequest={handleJoinRequest}
-              joinLoading={joinLoadingId === t._id}
-            />
-          ))}
-        </div>
-      )}
-
-      {showModal && (
-        <CreateTripModal
-          onClose={() => setShowModal(false)}
-          onCreated={handleCreated}
-        />
-      )}
     </div>
   );
 }
