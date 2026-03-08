@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Globe } from "lucide-react";
 import api from "../lib/api";
 import TripCard from "../components/TripCard";
 import CreateTripModal from "../components/CreateTripModal";
@@ -98,9 +98,22 @@ export default function Home() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-[var(--text)]">Public Trips</h1>
+    <div className="max-w-5xl mx-auto px-4 py-6 space-y-5">
+      {/* Header card */}
+      <div className="bg-white/60 backdrop-blur-sm border border-[var(--cards)] rounded-2xl p-5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/15 flex items-center justify-center">
+            <Globe size={20} className="text-[var(--primary)]" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-[var(--text)]">
+              Public Trips
+            </h1>
+            <p className="text-xs text-[var(--text-light)]">
+              {trips.length} {trips.length === 1 ? "trip" : "trips"} available
+            </p>
+          </div>
+        </div>
         <button
           onClick={handleCreateClick}
           disabled={isActive === false}
@@ -109,10 +122,10 @@ export default function Home() {
               ? "Complete your profile first"
               : "Create a new trip"
           }
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
         >
           <Plus size={18} />
-          Create Trip
+          <span className="hidden sm:inline">Create Trip</span>
         </button>
       </div>
 

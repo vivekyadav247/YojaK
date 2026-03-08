@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Map } from "lucide-react";
 import api from "../lib/api";
 import TripCard from "../components/TripCard";
 
@@ -24,10 +24,19 @@ export default function MyTrips() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-[var(--text)] mb-6">
-        My Trips
-      </h1>
+    <div className="max-w-5xl mx-auto px-4 py-6 space-y-5">
+      {/* Header card */}
+      <div className="bg-white/60 backdrop-blur-sm border border-[var(--cards)] rounded-2xl p-5 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/15 flex items-center justify-center">
+          <Map size={20} className="text-[var(--primary)]" />
+        </div>
+        <div>
+          <h1 className="text-xl font-bold text-[var(--text)]">My Trips</h1>
+          <p className="text-xs text-[var(--text-light)]">
+            {trips.length} {trips.length === 1 ? "trip" : "trips"}
+          </p>
+        </div>
+      </div>
 
       {trips.length === 0 ? (
         <p className="text-center text-[var(--text-light)] mt-20">

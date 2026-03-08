@@ -35,6 +35,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import api from "../lib/api";
+import ConfirmModal from "../components/ConfirmModal";
 
 const API_BASE = "http://localhost:3000";
 
@@ -158,6 +159,7 @@ function ItineraryTab({ tripId }) {
   const [days, setDays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const fetchDays = useCallback(() => {
     api
@@ -204,7 +206,17 @@ function ItineraryTab({ tripId }) {
           day={day}
           tripId={tripId}
           onRefresh={fetchDays}
-          onDelete={() => deleteDay(day._id)}
+          onDelete={() =>
+            setConfirmDelete({
+              title: `Delete Day ${day.dayNumber}?`,
+              message:
+                "All activities and comments in this day will be removed.",
+              action: () => {
+                deleteDay(day._id);
+                setConfirmDelete(null);
+              },
+            })
+          }
         />
       ))}
       <button
@@ -215,6 +227,15 @@ function ItineraryTab({ tripId }) {
         <Plus size={16} />
         {creating ? "Adding…" : "Add Day"}
       </button>
+
+      {confirmDelete && (
+        <ConfirmModal
+          title={confirmDelete.title}
+          message={confirmDelete.message}
+          onConfirm={confirmDelete.action}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
     </div>
   );
 }
@@ -400,6 +421,7 @@ function SortableActivity({
     useSortable({ id: act._id });
   const style = { transform: CSS.Transform.toString(transform), transition };
   const [showComments, setShowComments] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   return (
     <div
@@ -443,7 +465,7 @@ function SortableActivity({
           )}
         </button>
         <button
-          onClick={onRemove}
+          onClick={() => setConfirmDelete(true)}
           className="p-1 rounded hover:bg-red-50 text-red-400 cursor-pointer"
         >
           <Trash2 size={14} />
@@ -456,6 +478,18 @@ function SortableActivity({
           dayId={dayId}
           activity={act}
           onRefresh={onRefresh}
+        />
+      )}
+
+      {confirmDelete && (
+        <ConfirmModal
+          title="Delete Activity?"
+          message={`Remove "${act.description}"? This cannot be undone.`}
+          onConfirm={() => {
+            onRemove();
+            setConfirmDelete(false);
+          }}
+          onCancel={() => setConfirmDelete(false)}
         />
       )}
     </div>
@@ -606,6 +640,7 @@ function ChecklistTab({ tripId, checklist, onUpdate }) {
   const items = checklist ? Object.entries(checklist) : [];
   const [newItem, setNewItem] = useState("");
   const [adding, setAdding] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const addItem = async (e) => {
     e.preventDefault();
@@ -662,7 +697,16 @@ function ChecklistTab({ tripId, checklist, onUpdate }) {
             {key}
           </span>
           <button
-            onClick={() => removeItem(key)}
+            onClick={() =>
+              setConfirmDelete({
+                title: "Remove Item?",
+                message: `Remove "${key}" from checklist?`,
+                action: () => {
+                  removeItem(key);
+                  setConfirmDelete(null);
+                },
+              })
+            }
             className="text-red-400 hover:text-red-600 cursor-pointer"
           >
             <Trash2 size={14} />
@@ -685,6 +729,15 @@ function ChecklistTab({ tripId, checklist, onUpdate }) {
           Add
         </button>
       </form>
+
+      {confirmDelete && (
+        <ConfirmModal
+          title={confirmDelete.title}
+          message={confirmDelete.message}
+          onConfirm={confirmDelete.action}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
     </div>
   );
 }
@@ -858,6 +911,8 @@ function DocumentsTab({ tripId }) {
     fetchDocs();
   };
 
+  const [confirmDelete, setConfirmDelete] = useState(null);
+
   if (loading) return <Spinner />;
 
   const allFiles = docs.flatMap((d) =>
@@ -899,7 +954,16 @@ function DocumentsTab({ tripId }) {
                 {f.filename}
               </a>
               <button
-                onClick={() => deleteDoc(f.docId)}
+                onClick={() =>
+                  setConfirmDelete({
+                    title: "Delete Document?",
+                    message: `Remove "${f.filename}"? This cannot be undone.`,
+                    action: () => {
+                      deleteDoc(f.docId);
+                      setConfirmDelete(null);
+                    },
+                  })
+                }
                 className="text-red-400 hover:text-red-600 cursor-pointer ml-2"
               >
                 <Trash2 size={14} />
@@ -907,6 +971,15 @@ function DocumentsTab({ tripId }) {
             </div>
           ))}
         </div>
+      )}
+
+      {confirmDelete && (
+        <ConfirmModal
+          title={confirmDelete.title}
+          message={confirmDelete.message}
+          onConfirm={confirmDelete.action}
+          onCancel={() => setConfirmDelete(null)}
+        />
       )}
     </div>
   );
@@ -921,6 +994,7 @@ function MembersTab({ trip, tripId, onUpdate }) {
   const [msg, setMsg] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [updatingRole, setUpdatingRole] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   useEffect(() => {
     api
@@ -1019,7 +1093,16 @@ function MembersTab({ trip, tripId, onUpdate }) {
                     <option value="editor">Editor</option>
                   </select>
                   <button
-                    onClick={() => removeMember(memberId)}
+                    onClick={() =>
+                      setConfirmAction({
+                        title: "Remove Member?",
+                        message: `Remove ${m.user?.name ?? "this member"} from the trip?`,
+                        action: () => {
+                          removeMember(memberId);
+                          setConfirmAction(null);
+                        },
+                      })
+                    }
                     className="p-1 rounded hover:bg-red-50 text-red-400 hover:text-red-600 cursor-pointer"
                     title="Remove member"
                   >
@@ -1082,6 +1165,15 @@ function MembersTab({ trip, tripId, onUpdate }) {
             </p>
           )}
         </form>
+      )}
+
+      {confirmAction && (
+        <ConfirmModal
+          title={confirmAction.title}
+          message={confirmAction.message}
+          onConfirm={confirmAction.action}
+          onCancel={() => setConfirmAction(null)}
+        />
       )}
     </div>
   );

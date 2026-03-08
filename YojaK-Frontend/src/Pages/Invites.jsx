@@ -7,8 +7,12 @@ import {
   Trash2,
   Mail,
   UserPlus,
+  Inbox,
+  ArrowUpRight,
+  Users,
 } from "lucide-react";
 import api from "../lib/api";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function Invites() {
   const [received, setReceived] = useState([]);
@@ -111,13 +115,13 @@ export default function Invites() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-[var(--text)] mb-6">Invites</h1>
+    <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
+      <h1 className="text-2xl font-bold text-[var(--text)]">Invites</h1>
 
       {/* Send invite form */}
       <form
         onSubmit={handleSend}
-        className="bg-white/80 p-4 rounded-2xl border border-[var(--cards)]/40 mb-6 space-y-3"
+        className="bg-white/80 p-4 rounded-2xl border border-[var(--cards)]/40 space-y-3"
       >
         <p className="text-sm font-semibold text-[var(--text)] flex items-center gap-2">
           <Send size={16} /> Send an Invite
@@ -129,12 +133,12 @@ export default function Invites() {
             value={emailOrMobile}
             onChange={(e) => setEmailOrMobile(e.target.value)}
             required
-            className="sm:col-span-1 px-3 py-2.5 rounded-lg border border-[var(--cards)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            className="sm:col-span-1 px-3 py-2.5 rounded-lg border border-[var(--cards)] text-sm bg-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
           />
           <select
             value={tripId}
             onChange={(e) => setTripId(e.target.value)}
-            className="sm:col-span-1 px-3 py-2.5 rounded-lg border border-[var(--cards)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            className="sm:col-span-1 px-3 py-2.5 rounded-lg border border-[var(--cards)] text-sm bg-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
           >
             {trips.map((t) => (
               <option key={t._id} value={t._id}>
@@ -159,27 +163,46 @@ export default function Invites() {
         )}
       </form>
 
-      {/* Tabs */}
-      <div className="flex gap-4 border-b border-[var(--cards)] mb-4">
+      {/* Tabs — pill style */}
+      <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
         {[
-          { key: "received", label: "Received", count: received.length },
-          { key: "sent", label: "Sent", count: sent.length },
+          {
+            key: "received",
+            label: "Received",
+            count: received.length,
+            icon: Inbox,
+          },
+          {
+            key: "sent",
+            label: "Sent",
+            count: sent.length,
+            icon: ArrowUpRight,
+          },
           {
             key: "joinRequests",
             label: "Join Requests",
             count: joinRequests.length,
+            icon: Users,
           },
         ].map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`pb-2 text-sm font-medium transition-colors cursor-pointer ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium cursor-pointer transition-all whitespace-nowrap shrink-0 ${
               tab === t.key
-                ? "text-[var(--primary)] border-b-2 border-[var(--primary)]"
-                : "text-[var(--text-light)]"
+                ? "bg-[var(--primary)] text-white shadow-sm"
+                : "bg-white/60 text-[var(--text-light)] hover:bg-[var(--cards)]/40 hover:text-[var(--text)]"
             }`}
           >
-            {t.label} ({t.count})
+            <t.icon size={15} />
+            {t.label}
+            <span
+              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                tab === t.key ? "bg-white/25" : "bg-[var(--cards)]/40"
+              }`}
+            >
+              {t.count}
+            </span>
           </button>
         ))}
       </div>
@@ -226,6 +249,7 @@ export default function Invites() {
 }
 
 function InviteRow({ inv, type, onRespond, onDelete }) {
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const person =
     type === "received"
       ? inv.sender?.name || inv.sender?.email || "Someone"
@@ -274,7 +298,16 @@ function InviteRow({ inv, type, onRespond, onDelete }) {
         )}
         {type === "sent" && (
           <button
-            onClick={() => onDelete(inv._id)}
+            onClick={() =>
+              setConfirmDelete({
+                title: "Delete Invite?",
+                message: `Delete the invite sent to ${person}?`,
+                action: () => {
+                  onDelete(inv._id);
+                  setConfirmDelete(null);
+                },
+              })
+            }
             className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 cursor-pointer"
             title="Delete"
           >
@@ -282,6 +315,15 @@ function InviteRow({ inv, type, onRespond, onDelete }) {
           </button>
         )}
       </div>
+
+      {confirmDelete && (
+        <ConfirmModal
+          title={confirmDelete.title}
+          message={confirmDelete.message}
+          onConfirm={confirmDelete.action}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
     </div>
   );
 }
