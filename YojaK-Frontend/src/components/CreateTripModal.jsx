@@ -113,7 +113,7 @@ export default function CreateTripModal({ onClose, onCreated }) {
                 name="type"
                 value={form.type}
                 onChange={handleChange}
-                className="mt-1 w-full px-4 py-2.5 rounded-lg border border-[var(--cards)] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--primary)] text-[var(--text)]"
+                className="mt-1 w-full px-4 py-2.5 rounded-lg border border-[var(--cards)] bg-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] text-[var(--text)]"
               >
                 <option value="public">Public</option>
                 <option value="private">Private</option>
@@ -153,7 +153,7 @@ function InputField({ label, ...props }) {
       <input
         required
         {...props}
-        className="mt-1 w-full px-4 py-2.5 rounded-lg border border-[var(--cards)] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--primary)] text-[var(--text)]"
+        className="mt-1 w-full px-4 py-2.5 rounded-lg border border-[var(--cards)] bg-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] text-[var(--text)]"
       />
     </label>
   );

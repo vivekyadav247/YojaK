@@ -123,7 +123,7 @@ export default function Profile() {
             value={form.gender}
             onChange={handleChange}
             required
-            className="mt-1 w-full px-4 py-2.5 rounded-lg border border-[var(--cards)]/50 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--primary)] text-[var(--text)]"
+            className="mt-1 w-full px-4 py-2.5 rounded-lg border border-[var(--cards)]/50 bg-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] text-[var(--text)]"
           >
             <option value="" disabled>
               Select gender
@@ -168,7 +168,7 @@ function Field({ label, ...props }) {
       <input
         required
         {...props}
-        className="mt-1 w-full px-4 py-2.5 rounded-lg border border-[var(--cards)]/50 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--primary)] text-[var(--text)]"
+        className="mt-1 w-full px-4 py-2.5 rounded-lg border border-[var(--cards)]/50 bg-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] text-[var(--text)]"
       />
     </label>
   );

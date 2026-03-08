@@ -65,7 +65,7 @@ export default function TripDetail() {
       </p>
     );
 
-  const tabs = ["itinerary", "checklist", "budget", "documents"];
+  const tabs = ["itinerary", "checklist", "budget", "documents", "members"];
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
@@ -110,6 +110,7 @@ export default function TripDetail() {
         )}
         {tab === "budget" && <BudgetTab tripId={tripId} />}
         {tab === "documents" && <DocumentsTab tripId={tripId} />}
+        {tab === "members" && <MembersTab trip={trip} tripId={tripId} />}
       </div>
     </div>
   );
@@ -297,7 +298,7 @@ function DayCard({ day, tripId, onRefresh, onDelete }) {
               <button
                 type="button"
                 onClick={() => setShowTimePicker((p) => !p)}
-                className="w-full px-2 py-1.5 text-sm rounded-lg border border-[var(--cards)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] bg-white text-left cursor-pointer"
+                className="w-full px-2 py-1.5 text-sm rounded-lg border border-[var(--cards)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] bg-white/60 text-left cursor-pointer"
               >
                 {actForm.time || "Time"}
               </button>
@@ -639,7 +640,7 @@ function ChecklistTab({ tripId, checklist, onUpdate }) {
           value={newItem}
           onChange={(e) => setNewItem(e.target.value)}
           required
-          className="flex-1 px-3 py-2 rounded-lg border border-[var(--cards)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+          className="flex-1 px-3 py-2 rounded-lg border border-[var(--cards)] text-sm bg-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
         />
         <button
           type="submit"
@@ -727,7 +728,7 @@ function BudgetTab({ tripId }) {
             setExpForm((p) => ({ ...p, description: e.target.value }))
           }
           required
-          className="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--cards)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+          className="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--cards)] bg-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
         />
         <input
           placeholder="₹ Amount"
@@ -738,7 +739,7 @@ function BudgetTab({ tripId }) {
             setExpForm((p) => ({ ...p, amount: e.target.value }))
           }
           required
-          className="w-28 px-3 py-2 text-sm rounded-lg border border-[var(--cards)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+          className="w-28 px-3 py-2 text-sm rounded-lg border border-[var(--cards)] bg-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
         />
         <button
           type="submit"
@@ -871,6 +872,119 @@ function DocumentsTab({ tripId }) {
             </div>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════
+   MEMBERS TAB
+   ═══════════════════════════════ */
+function MembersTab({ trip, tripId }) {
+  const [email, setEmail] = useState("");
+  const [sending, setSending] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  const isOwner = trip.members?.some((m) => m.role === "owner" && m.user?._id);
+
+  const handleInvite = async (e) => {
+    e.preventDefault();
+    setSending(true);
+    setMsg(null);
+    try {
+      await api.post("/invites/send", { emailOrMobile: email, tripId });
+      setEmail("");
+      setMsg({ type: "success", text: "Invite sent!" });
+    } catch (err) {
+      setMsg({
+        type: "error",
+        text: err.response?.data?.error || "Failed to send invite",
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const roleColors = {
+    owner: "bg-[var(--primary)]/15 text-[var(--primary)]",
+    editor: "bg-amber-100 text-amber-700",
+    member: "bg-gray-100 text-gray-500",
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Members list */}
+      <div className="space-y-2">
+        {(trip.members ?? []).map((m, i) => (
+          <div
+            key={m._id ?? i}
+            className="flex items-center gap-3 bg-white/80 p-3 rounded-xl border border-[var(--cards)]/40"
+          >
+            {/* Avatar */}
+            <div className="w-9 h-9 rounded-full bg-[var(--primary)]/20 flex items-center justify-center text-[var(--primary)] font-bold text-sm shrink-0">
+              {m.user?.name?.[0]?.toUpperCase() ?? "?"}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-[var(--text)] truncate">
+                {m.user?.name ?? "Unknown"}
+              </p>
+              <p className="text-xs text-[var(--text-light)] truncate">
+                {m.user?.email ?? ""}
+              </p>
+            </div>
+            <span
+              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${
+                roleColors[m.role] ?? roleColors.member
+              }`}
+            >
+              {m.role}
+            </span>
+          </div>
+        ))}
+        {trip.members?.length === 0 && (
+          <p className="text-sm text-[var(--text-light)] text-center py-6">
+            No members yet.
+          </p>
+        )}
+      </div>
+
+      {/* Invite form */}
+      {trip.type !== "solo" && (
+        <form
+          onSubmit={handleInvite}
+          className="bg-white/80 p-4 rounded-2xl border border-[var(--cards)]/40 space-y-3"
+        >
+          <p className="text-sm font-semibold text-[var(--text)]">
+            Invite someone
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Email or mobile number"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--cards)] bg-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] text-[var(--text)]"
+            />
+            <button
+              type="submit"
+              disabled={sending}
+              className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 cursor-pointer flex items-center gap-1"
+            >
+              <Send size={14} />
+              {sending ? "Sending…" : "Invite"}
+            </button>
+          </div>
+          {msg && (
+            <p
+              className={`text-xs ${
+                msg.type === "success" ? "text-green-600" : "text-red-500"
+              }`}
+            >
+              {msg.text}
+            </p>
+          )}
+        </form>
       )}
     </div>
   );
