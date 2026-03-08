@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220">
+  <!-- Grass base -->
+  <ellipse cx="110" cy="178" rx="85" ry="18" fill="#4CAF50" opacity="0.7"/>
+  <ellipse cx="110" cy="180" rx="75" ry="12" fill="#388E3C" opacity="0.5"/>
+
+  <!-- Mountain (right) -->
+  <polygon points="158,88 195,172 125,172" fill="#78909C"/>
+  <polygon points="158,88 175,118 148,118" fill="#B0BEC5" opacity="0.6"/>
+  <polygon points="158,88 168,105 150,108" fill="#ECEFF1"/>
+
+  <!-- Globe -->
+  <circle cx="110" cy="112" r="55" fill="url(#globeGrad)" stroke="#1565C0" stroke-width="3"/>
+  <defs>
+    <radialGradient id="globeGrad" cx="40%" cy="35%">
+      <stop offset="0%" stop-color="#81D4FA"/>
+      <stop offset="50%" stop-color="#42A5F5"/>
+      <stop offset="100%" stop-color="#1565C0"/>
+    </radialGradient>
+  </defs>
+  <!-- Continents -->
+  <path d="M88 88 Q98 74 112 80 Q120 90 110 102 Q98 97 88 88Z" fill="#64B5F6" opacity="0.6"/>
+  <path d="M122 92 Q140 84 144 102 Q138 117 127 110 Q122 100 122 92Z" fill="#64B5F6" opacity="0.6"/>
+  <path d="M92 122 Q107 114 114 127 Q107 142 97 135 Q89 127 92 122Z" fill="#64B5F6" opacity="0.6"/>
+  <path d="M127 122 Q137 120 140 130 Q134 140 128 134Z" fill="#64B5F6" opacity="0.5"/>
+  <!-- Globe latitude lines -->
+  <ellipse cx="110" cy="112" rx="55" ry="20" fill="none" stroke="#90CAF9" stroke-width="1" opacity="0.4"/>
+  <ellipse cx="110" cy="97" rx="45" ry="15" fill="none" stroke="#90CAF9" stroke-width="1" opacity="0.3"/>
+  <ellipse cx="110" cy="127" rx="45" ry="15" fill="none" stroke="#90CAF9" stroke-width="1" opacity="0.3"/>
+  <!-- Globe longitude -->
+  <ellipse cx="110" cy="112" rx="20" ry="55" fill="none" stroke="#90CAF9" stroke-width="1" opacity="0.3"/>
+
+  <!-- Palm tree 1 (left) -->
+  <rect x="58" y="122" width="4" height="55" rx="2" fill="#795548"/>
+  <!-- Palm leaves -->
+  <path d="M60 122 Q40 102 25 107 Q42 110 55 120Z" fill="#43A047"/>
+  <path d="M60 120 Q45 92 35 90 Q48 98 57 117Z" fill="#388E3C"/>
+  <path d="M60 122 Q75 97 90 100 Q75 107 62 120Z" fill="#43A047"/>
+  <path d="M60 120 Q70 90 82 92 Q70 102 61 117Z" fill="#2E7D32"/>
+  <path d="M60 122 Q50 97 42 97 Q50 105 58 120Z" fill="#4CAF50"/>
+
+  <!-- Palm tree 2 (left-small) -->
+  <rect x="38" y="137" width="3" height="38" rx="1.5" fill="#6D4C41"/>
+  <path d="M39.5 137 Q25 120 15 124 Q27 126 36 135Z" fill="#43A047" opacity="0.9"/>
+  <path d="M39.5 137 Q50 117 58 120 Q50 127 41 135Z" fill="#388E3C" opacity="0.9"/>
+  <path d="M39.5 135 Q32 114 25 115 Q32 122 38 133Z" fill="#4CAF50" opacity="0.8"/>
+
+  <!-- Sun -->
+  <circle cx="58" cy="48" r="14" fill="#FFB300"/>
+  <circle cx="58" cy="48" r="10" fill="#FFD54F"/>
+  <!-- Sun rays -->
+  <line x1="58" y1="30" x2="58" y2="26" stroke="#FFB300" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="70" y1="36" x2="73" y2="33" stroke="#FFB300" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="46" y1="36" x2="43" y2="33" stroke="#FFB300" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="74" y1="48" x2="78" y2="48" stroke="#FFB300" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="42" y1="48" x2="38" y2="48" stroke="#FFB300" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="68" y1="58" x2="71" y2="61" stroke="#FFB300" stroke-width="2" stroke-linecap="round"/>
+  <line x1="48" y1="58" x2="45" y2="61" stroke="#FFB300" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Orbit trail (behind globe, bottom-left to right) -->
+  <path d="M32 135 Q65 158 110 142 Q155 125 188 78" fill="none" stroke="#F57C00" stroke-width="5.5" stroke-linecap="round" opacity="0.45"/>
+  <!-- Orbit trail (front, thicker) -->
+  <path d="M35 132 Q55 145 80 140" fill="none" stroke="#FF9800" stroke-width="6.5" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- Airplane -->
+  <g transform="translate(175, 60) rotate(38)">
+    <path d="M6 0 L-24 8 L-19 0 L-24 -8 Z" fill="#FF8F00"/>
+    <path d="M-13 0 L-20 11 L-17 0 L-20 -11 Z" fill="#F57C00"/>
+    <path d="M-22 2 L-28 6 L-26 0 L-28 -3 Z" fill="#FF8F00"/>
+  </g>
+
+  <!-- Birds -->
+  <path d="M140 40 Q143 36 146 40" fill="none" stroke="#37474F" stroke-width="1.3" stroke-linecap="round"/>
+  <path d="M152 32 Q155 28 158 32" fill="none" stroke="#37474F" stroke-width="1.3" stroke-linecap="round"/>
+  <path d="M148 46 Q150 43 153 46" fill="none" stroke="#37474F" stroke-width="1.1" stroke-linecap="round"/>
+  <path d="M162 38 Q164 35 167 38" fill="none" stroke="#37474F" stroke-width="1" stroke-linecap="round"/>
+  <path d="M155 52 Q157 49 159 52" fill="none" stroke="#37474F" stroke-width="0.9" stroke-linecap="round"/>
+  <path d="M170 48 Q172 45 174 48" fill="none" stroke="#37474F" stroke-width="0.8" stroke-linecap="round"/>
+
+  <!-- Small grass/bush details -->
+  <path d="M75 174 Q78 164 81 174" fill="#4CAF50"/>
+  <path d="M130 172 Q133 162 136 172" fill="#43A047"/>
+  <path d="M100 176 Q102 168 104 176" fill="#388E3C"/>
+  <path d="M150 174 Q152 167 154 174" fill="#4CAF50"/>
+  <path d="M45 174 Q47 168 49 174" fill="#43A047"/>
+  <path d="M165 175 Q167 170 169 175" fill="#388E3C"/>
+</svg>
