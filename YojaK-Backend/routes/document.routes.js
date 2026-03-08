@@ -6,7 +6,9 @@ const {
 } = require("../controllers/documents.controller.js");
 const upload = require("../middlewares/upload.middleware.js");
 
-router.post("/", upload.array("files", 5), uploadDocument);
+const profileComplete = require("../middlewares/profileComplete.middleware.js");
+
+router.post("/", profileComplete, upload.array("files", 5), uploadDocument);
 router.get("/trip/:tripId", getDocumentsByTripId);
-router.delete("/:id", deleteDocument);
+router.delete("/:id", profileComplete, deleteDocument);
 module.exports = router;

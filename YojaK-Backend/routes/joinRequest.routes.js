@@ -1,4 +1,5 @@
 const router = require("express").Router();
+const profileComplete = require("../middlewares/profileComplete.middleware.js");
 const {
   sendJoinRequest,
   myJoinRequests,
@@ -6,9 +7,9 @@ const {
   respondToJoinRequest,
 } = require("../controllers/joinRequest.controller");
 
-router.post("/send", sendJoinRequest);
+router.post("/send", profileComplete, sendJoinRequest);
 router.get("/my", myJoinRequests);
 router.get("/trip/:tripId", getTripJoinRequests);
-router.put("/respond", respondToJoinRequest);
+router.put("/respond", profileComplete, respondToJoinRequest);
 
 module.exports = router;

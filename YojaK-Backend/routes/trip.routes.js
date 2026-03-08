@@ -1,4 +1,5 @@
 const router = require("express").Router();
+const profileComplete = require("../middlewares/profileComplete.middleware.js");
 const {
   createTrip,
   getTrips,
@@ -13,21 +14,27 @@ const {
   getChecklistByTripId,
   updateChecklistofTrip,
   deleteChecklistofTrip,
-  getAllPublicTrips,
 } = require("../controllers/trip.controller.js");
 
-router.post("/", createTrip);
-router.get("/", getAllPublicTrips);
+router.post("/", profileComplete, createTrip);
 router.get("/trips", getTrips);
 router.get("/:id", getTripById);
-router.put("/:id", updateTrip);
-router.delete("/:id", deleteTrip);
+router.put("/:id", profileComplete, updateTrip);
+router.delete("/:id", profileComplete, deleteTrip);
 router.get("/:id/members", getTripMembers);
-router.post("/:id/members", addTripMember);
-router.delete("/:id/members/:memberId", removeTripMember);
-router.post("/:id/leave", leaveTrip);
-router.post("/:id/checklist", createChecklistofTrip);
+router.post("/:id/members", profileComplete, addTripMember);
+router.delete("/:id/members/:memberId", profileComplete, removeTripMember);
+router.post("/:id/leave", profileComplete, leaveTrip);
+router.post("/:id/checklist", profileComplete, createChecklistofTrip);
 router.get("/:id/checklist", getChecklistByTripId);
-router.put("/:id/checklist/:checklistId", updateChecklistofTrip);
-router.delete("/:id/checklist/:checklistId", deleteChecklistofTrip);
+router.put(
+  "/:id/checklist/:checklistId",
+  profileComplete,
+  updateChecklistofTrip,
+);
+router.delete(
+  "/:id/checklist/:checklistId",
+  profileComplete,
+  deleteChecklistofTrip,
+);
 module.exports = router;

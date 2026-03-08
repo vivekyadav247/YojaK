@@ -1,4 +1,5 @@
 const router = require("express").Router();
+const profileComplete = require("../middlewares/profileComplete.middleware.js");
 const {
   createDayItineraryofTrip,
   getDayItineraryByTripId,
@@ -18,12 +19,13 @@ const {
   reorderActivitiesInDayItinerary,
 } = require("../controllers/dayItinerary.controller.js");
 
-router.post("/trip/:tripId", createDayItineraryofTrip);
+router.post("/trip/:tripId", profileComplete, createDayItineraryofTrip);
 router.get("/trip/:tripId", getDayItineraryByTripId);
-router.put("/trip/:tripId", updateDayItineraryofTrip);
-router.delete("/trip/:tripId", deleteDayItineraryofTrip);
+router.put("/trip/:tripId", profileComplete, updateDayItineraryofTrip);
+router.delete("/trip/:tripId", profileComplete, deleteDayItineraryofTrip);
 router.post(
   "/trip/:tripId/dayItinerary/:dayItineraryId/activity",
+  profileComplete,
   addActivityToDayItinerary,
 );
 router.get(
@@ -32,14 +34,17 @@ router.get(
 );
 router.put(
   "/trip/:tripId/dayItinerary/:dayItineraryId/activity",
+  profileComplete,
   updateActivityInDayItinerary,
 );
 router.delete(
   "/trip/:tripId/dayItinerary/:dayItineraryId/activity",
+  profileComplete,
   removeActivityFromDayItinerary,
 );
 router.post(
   "/trip/:tripId/dayItinerary/:dayItineraryId/comment",
+  profileComplete,
   addCommentToDayItinerary,
 );
 router.get(
@@ -48,14 +53,17 @@ router.get(
 );
 router.put(
   "/trip/:tripId/dayItinerary/:dayItineraryId/comment",
+  profileComplete,
   updateCommentInDayItinerary,
 );
 router.delete(
   "/trip/:tripId/dayItinerary/:dayItineraryId/comment",
+  profileComplete,
   removeCommentFromDayItinerary,
 );
 router.post(
   "/trip/:tripId/dayItinerary/:dayItineraryId/activity/comment",
+  profileComplete,
   addCommentToActivity,
 );
 router.get(
@@ -64,10 +72,12 @@ router.get(
 );
 router.delete(
   "/trip/:tripId/dayItinerary/:dayItineraryId/activity/comment",
+  profileComplete,
   removeCommentFromActivity,
 );
 router.put(
   "/trip/:tripId/dayItinerary/:dayItineraryId/activities/reorder",
+  profileComplete,
   reorderActivitiesInDayItinerary,
 );
 

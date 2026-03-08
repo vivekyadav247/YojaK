@@ -6,9 +6,11 @@ const {
   deleteBudgetTrackerofTrip,
 } = require("../controllers/budgetTracker.controller.js");
 
-router.post("/trip/:tripId", createBudgetTrackerofTrip);
+const profileComplete = require("../middlewares/profileComplete.middleware.js");
+
+router.post("/trip/:tripId", profileComplete, createBudgetTrackerofTrip);
 router.get("/trip/:tripId", getBudgetTrackerByTripId);
-router.put("/trip/:tripId", updateBudgetTrackerofTrip);
-router.delete("/trip/:tripId", deleteBudgetTrackerofTrip);
+router.put("/trip/:tripId", profileComplete, updateBudgetTrackerofTrip);
+router.delete("/trip/:tripId", profileComplete, deleteBudgetTrackerofTrip);
 
 module.exports = router;

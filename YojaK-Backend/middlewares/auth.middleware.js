@@ -21,6 +21,11 @@ const authMiddleware = async (req, res, next) => {
         name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim(),
         email,
       });
+    } else if (!user.name) {
+      const clerkUser = await clerkClient.users.getUser(clerkId);
+      user.name =
+        `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim();
+      await user.save();
     }
 
     req.user = user;

@@ -20,7 +20,7 @@ export default function Profile() {
     api.get("/profile").then(({ data }) => {
       const u = data.user ?? data;
       setForm({
-        name: u.name || "",
+        name: u.name || clerkUser?.fullName || "",
         mobileNumber: u.mobileNumber || "",
         age: u.age ?? "",
         gender: u.gender || "",
@@ -28,7 +28,7 @@ export default function Profile() {
       });
       setIsProfileComplete(u.isProfileComplete);
     });
-  }, []);
+  }, [clerkUser]);
 
   const handleChange = (e) => {
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));

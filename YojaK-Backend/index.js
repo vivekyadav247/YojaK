@@ -32,29 +32,17 @@ app.use(express.json());
 app.use(clerkMiddleware());
 
 db();
+const { getAllPublicTrips } = require("./controllers/trip.controller.js");
+
 const port = process.env.PORT || 3000;
 app.use("/api/profile", profileRoutes);
-app.use("/api/trips", authMiddleware, profileComplete, tripRoutes);
-app.use(
-  "/api/day-itineraries",
-  authMiddleware,
-  profileComplete,
-  dayItineraryRoutes,
-);
-app.use("/api/documents", authMiddleware, profileComplete, documentRoutes);
-app.use(
-  "/api/budget-trackers",
-  authMiddleware,
-  profileComplete,
-  budgetTrackerRoutes,
-);
-app.use("/api", authMiddleware, profileComplete, invitesRoutes);
-app.use(
-  "/api/join-requests",
-  authMiddleware,
-  profileComplete,
-  joinRequestRoutes,
-);
+app.get("/api/trips", getAllPublicTrips);
+app.use("/api/trips", authMiddleware, tripRoutes);
+app.use("/api/day-itineraries", authMiddleware, dayItineraryRoutes);
+app.use("/api/documents", authMiddleware, documentRoutes);
+app.use("/api/budget-trackers", authMiddleware, budgetTrackerRoutes);
+app.use("/api", authMiddleware, invitesRoutes);
+app.use("/api/join-requests", authMiddleware, joinRequestRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {
