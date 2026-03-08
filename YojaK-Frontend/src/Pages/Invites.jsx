@@ -76,6 +76,8 @@ export default function Invites() {
         setRespondError(
           "Please complete your profile before accepting invites.",
         );
+      } else if (err.response?.data?.error) {
+        setRespondError(err.response.data.error);
       }
     }
   };

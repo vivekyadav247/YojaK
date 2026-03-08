@@ -68,6 +68,8 @@ const syncTripStatus = async (trip) => {
   }
 };
 
+exports.syncTripStatus = syncTripStatus;
+
 exports.getAllPublicTrips = async (req, res) => {
   try {
     const trips = await Trip.find({ type: "public" });

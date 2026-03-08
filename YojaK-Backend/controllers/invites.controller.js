@@ -3,6 +3,7 @@ const User = require("../models/user.model");
 const Trip = require("../models/trip.model");
 const { isMember } = require("../utils/tripAuth");
 const { sendInviteEmail } = require("../utils/sendEmail");
+const { syncTripStatus } = require("./trip.controller");
 
 const isEmail = (str) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str);
 
@@ -12,6 +13,13 @@ exports.sendInvite = async (req, res) => {
 
     const trip = await Trip.findById(tripId);
     if (!trip) return res.status(404).json({ error: "Trip not found" });
+
+    await syncTripStatus(trip);
+    if (trip.status !== "planned") {
+      return res
+        .status(400)
+        .json({ error: "Can only send invites for trips in planned status" });
+    }
 
     // Find receiver by email or mobile
     const receiver = await User.findOne({
@@ -143,15 +151,24 @@ exports.respondToInvite = async (req, res) => {
       invite.receiver = req.user._id;
     }
 
-    invite.status = status;
-    await invite.save();
-
     if (status === "accepted") {
       const trip = await Trip.findById(invite.trip);
-      if (trip && !isMember(trip, req.user._id)) {
+      if (!trip) return res.status(404).json({ error: "Trip not found" });
+      await syncTripStatus(trip);
+      if (trip.status !== "planned") {
+        return res
+          .status(400)
+          .json({ error: "Can only join trips that are in planned status" });
+      }
+      invite.status = status;
+      await invite.save();
+      if (!isMember(trip, req.user._id)) {
         trip.members.push({ user: req.user._id, role: "viewer" });
         await trip.save();
       }
+    } else {
+      invite.status = status;
+      await invite.save();
     }
 
     res.status(200).json(invite);

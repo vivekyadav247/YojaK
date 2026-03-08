@@ -1,6 +1,7 @@
 const JoinRequest = require("../models/joinRequest.model");
 const Trip = require("../models/trip.model");
 const { isMember, isOwner } = require("../utils/tripAuth");
+const { syncTripStatus } = require("./trip.controller");
 
 // POST /join-requests/send  — user requests to join a public trip
 exports.sendJoinRequest = async (req, res) => {
@@ -13,6 +14,12 @@ exports.sendJoinRequest = async (req, res) => {
       return res
         .status(400)
         .json({ error: "Can only request to join public trips" });
+    }
+    await syncTripStatus(trip);
+    if (trip.status !== "planned") {
+      return res
+        .status(400)
+        .json({ error: "Can only join trips that are in planned status" });
     }
     if (isMember(trip, req.user._id)) {
       return res
@@ -90,6 +97,17 @@ exports.respondToJoinRequest = async (req, res) => {
     if (!trip) return res.status(404).json({ error: "Trip not found" });
     if (!isOwner(trip, req.user._id)) {
       return res.status(403).json({ error: "Only the trip owner can respond" });
+    }
+
+    if (status === "accepted") {
+      await syncTripStatus(trip);
+      if (trip.status !== "planned") {
+        return res
+          .status(400)
+          .json({
+            error: "Can only accept members when trip is in planned status",
+          });
+      }
     }
 
     jr.status = status;
