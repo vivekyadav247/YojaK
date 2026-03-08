@@ -369,7 +369,7 @@ export default function Landing() {
               <Github size={18} />
             </a>
             <a
-              href="https://linkedin.com/in/vivek-yadav-coder"
+              href="https://www.linkedin.com/in/vivek-07x/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-[var(--text-light)] hover:text-[var(--text)] transition-colors"
@@ -377,7 +377,7 @@ export default function Landing() {
               <Linkedin size={18} />
             </a>
             <a
-              href="https://instagram.com/vivek_yadav.07x"
+              href="https://www.instagram.com/vivekk.ydv_"
               target="_blank"
               rel="noopener noreferrer"
               className="text-[var(--text-light)] hover:text-[var(--text)] transition-colors"
