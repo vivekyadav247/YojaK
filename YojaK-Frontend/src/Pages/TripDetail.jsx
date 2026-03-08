@@ -46,6 +46,10 @@ export default function TripDetail() {
   const [trip, setTrip] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("itinerary");
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [confirmDeleteTrip, setConfirmDeleteTrip] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const reload = useCallback(() => {
     api
@@ -56,6 +60,50 @@ export default function TripDetail() {
   }, [tripId]);
 
   useEffect(reload, [reload]);
+
+  useEffect(() => {
+    api
+      .get("/profile")
+      .then(({ data }) => setCurrentUserId((data.user ?? data)._id))
+      .catch(() => {});
+  }, []);
+
+  const amOwnerOrEditor =
+    trip?.members?.some(
+      (m) =>
+        (m.role === "owner" || m.role === "editor") &&
+        currentUserId &&
+        (m.user?._id || m.user)?.toString() === currentUserId,
+    ) ?? false;
+
+  const amOwner =
+    trip?.members?.some(
+      (m) =>
+        m.role === "owner" &&
+        currentUserId &&
+        (m.user?._id || m.user)?.toString() === currentUserId,
+    ) ?? false;
+
+  const handleStatusChange = async (newStatus) => {
+    if (!trip || newStatus === trip.status) return;
+    setStatusUpdating(true);
+    try {
+      await api.put(`/trips/${tripId}`, { status: newStatus });
+      setTrip((prev) => ({ ...prev, status: newStatus }));
+    } catch {}
+    setStatusUpdating(false);
+  };
+
+  const handleDeleteTrip = async () => {
+    setDeleting(true);
+    try {
+      await api.delete(`/trips/${tripId}`);
+      navigate("/my-trips");
+    } catch {
+      setDeleting(false);
+      setConfirmDeleteTrip(false);
+    }
+  };
 
   if (loading)
     return (
@@ -90,12 +138,22 @@ export default function TripDetail() {
       <div className="bg-[var(--secondary)]/10 border border-[var(--cards)]/50 rounded-3xl p-4 md:p-6 space-y-4">
         {/* Header card */}
         <div className="bg-white/60 backdrop-blur-sm border border-[var(--cards)] rounded-2xl p-5 space-y-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-1 text-sm text-[var(--text-light)] hover:text-[var(--text)] cursor-pointer"
-          >
-            <ArrowLeft size={16} /> Back
-          </button>
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-1 text-sm text-[var(--text-light)] hover:text-[var(--text)] cursor-pointer"
+            >
+              <ArrowLeft size={16} /> Back
+            </button>
+            {amOwner && (
+              <button
+                onClick={() => setConfirmDeleteTrip(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 cursor-pointer transition-colors"
+              >
+                <Trash2 size={14} /> Delete Trip
+              </button>
+            )}
+          </div>
 
           <div className="flex items-start justify-between">
             <div>
@@ -106,15 +164,42 @@ export default function TripDetail() {
                 {trip.destinations?.join(", ")}
               </p>
             </div>
-            <span
-              className={`text-[10px] font-semibold px-2.5 py-1 rounded-full capitalize whitespace-nowrap ${
-                statusColors[trip.status] ?? statusColors.planned
-              }`}
-            >
-              {trip.status}
-            </span>
+            {amOwnerOrEditor ? (
+              <select
+                value={trip.status}
+                onChange={(e) => handleStatusChange(e.target.value)}
+                disabled={statusUpdating}
+                className={`text-[10px] font-semibold px-2.5 py-1 rounded-full capitalize whitespace-nowrap cursor-pointer border-none outline-none appearance-none pr-5 bg-no-repeat bg-[length:12px] bg-[right_4px_center] ${
+                  statusColors[trip.status] ?? statusColors.planned
+                }`}
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                }}
+              >
+                <option value="planned">Planned</option>
+                <option value="ongoing">Ongoing</option>
+                <option value="completed">Completed</option>
+              </select>
+            ) : (
+              <span
+                className={`text-[10px] font-semibold px-2.5 py-1 rounded-full capitalize whitespace-nowrap ${
+                  statusColors[trip.status] ?? statusColors.planned
+                }`}
+              >
+                {trip.status}
+              </span>
+            )}
           </div>
         </div>
+
+        {confirmDeleteTrip && (
+          <ConfirmModal
+            title="Delete Trip?"
+            message={`Are you sure you want to delete "${trip.title}"? This will permanently remove all itineraries, documents, and data. This cannot be undone.`}
+            onConfirm={handleDeleteTrip}
+            onCancel={() => setConfirmDeleteTrip(false)}
+          />
+        )}
 
         {/* Tabs — pill style */}
         <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">

@@ -48,9 +48,30 @@ exports.createTrip = async (req, res) => {
   }
 };
 
+// Auto-sync trip status based on dates
+const syncTripStatus = async (trip) => {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const start = new Date(trip.startDate);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(trip.endDate);
+  end.setHours(0, 0, 0, 0);
+
+  let expected;
+  if (now > end) expected = "completed";
+  else if (now >= start) expected = "ongoing";
+  else expected = "planned";
+
+  if (trip.status !== expected) {
+    trip.status = expected;
+    await trip.save();
+  }
+};
+
 exports.getAllPublicTrips = async (req, res) => {
   try {
     const trips = await Trip.find({ type: "public" });
+    await Promise.all(trips.map(syncTripStatus));
     res.json(trips);
   } catch (error) {
     res
@@ -65,6 +86,7 @@ exports.getTrips = async (req, res) => {
       .populate("members.user", "name email")
       .populate("budgetTracker")
       .populate("dayItineraryIds");
+    await Promise.all(trips.map(syncTripStatus));
     res.json(trips);
   } catch (error) {
     res
@@ -86,6 +108,7 @@ exports.getTripById = async (req, res) => {
     if (trip.type !== "public" && !isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
+    await syncTripStatus(trip);
     res.json(trip);
   } catch (error) {
     res
