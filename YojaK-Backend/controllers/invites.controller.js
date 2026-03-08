@@ -1,8 +1,7 @@
-const Invite = require("../models/invites.model");
+﻿const Invite = require("../models/invites.model");
 const User = require("../models/user.model");
 const Trip = require("../models/trip.model");
 const { isMember } = require("../utils/tripAuth");
-const { sendInviteEmail } = require("../utils/sendEmail");
 const { syncTripStatus } = require("./trip.controller");
 
 const isEmail = (str) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str);
@@ -26,61 +25,25 @@ exports.sendInvite = async (req, res) => {
       $or: [{ email: emailOrMobile }, { mobileNumber: emailOrMobile }],
     });
 
-    if (receiver) {
-      // Registered user flow
-      if (receiver._id.toString() === req.user._id.toString()) {
-        return res.status(400).json({ error: "Cannot invite yourself" });
-      }
-
-      const existing = await Invite.findOne({
-        sender: req.user._id,
-        receiver: receiver._id,
-        trip: tripId,
-        status: "pending",
-      });
-      if (existing) {
-        return res.status(400).json({ error: "Invite already sent" });
-      }
-
-      const invite = new Invite({
-        sender: req.user._id,
-        receiver: receiver._id,
-        trip: tripId,
-      });
-      await invite.save();
-
-      // If invited by email, also send email notification
+    if (!receiver) {
       if (isEmail(emailOrMobile)) {
-        sendInviteEmail({
-          to: receiver.email,
-          senderName: req.user.name || req.user.email,
-          tripTitle: trip.title,
-          tripDestination: trip.destination,
-          startDate: trip.startDate,
-          endDate: trip.endDate,
-        }).catch((err) =>
-          console.error("Failed to send invite email:", err.message),
-        );
+        return res
+          .status(404)
+          .json({ error: "User not found with that email" });
       }
-
-      const populated = await invite.populate("sender receiver trip");
-      return res.status(201).json(populated);
-    }
-
-    // Unregistered user flow — only works with email
-    if (!isEmail(emailOrMobile)) {
       return res
         .status(404)
         .json({ error: "User not found with that mobile number" });
     }
 
-    if (emailOrMobile.toLowerCase() === req.user.email?.toLowerCase()) {
+    // Registered user flow
+    if (receiver._id.toString() === req.user._id.toString()) {
       return res.status(400).json({ error: "Cannot invite yourself" });
     }
 
     const existing = await Invite.findOne({
       sender: req.user._id,
-      receiverEmail: emailOrMobile.toLowerCase(),
+      receiver: receiver._id,
       trip: tripId,
       status: "pending",
     });
@@ -90,25 +53,13 @@ exports.sendInvite = async (req, res) => {
 
     const invite = new Invite({
       sender: req.user._id,
-      receiverEmail: emailOrMobile.toLowerCase(),
+      receiver: receiver._id,
       trip: tripId,
     });
     await invite.save();
 
-    // Send email in background — don't block response
-    sendInviteEmail({
-      to: emailOrMobile,
-      senderName: req.user.name || req.user.email,
-      tripTitle: trip.title,
-      tripDestination: trip.destination,
-      startDate: trip.startDate,
-      endDate: trip.endDate,
-    }).catch((err) =>
-      console.error("Failed to send invite email:", err.message),
-    );
-
-    const populated = await invite.populate("sender trip");
-    res.status(201).json(populated);
+    const populated = await invite.populate("sender receiver trip");
+    return res.status(201).json(populated);
   } catch (error) {
     res.status(500).json({ error: "Failed to send invite" });
   }
