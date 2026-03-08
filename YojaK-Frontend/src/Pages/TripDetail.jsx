@@ -277,7 +277,7 @@ export default function TripDetail() {
         </div>
 
         <div>
-          {tab === "itinerary" && <ItineraryTab tripId={tripId} />}
+          {tab === "itinerary" && <ItineraryTab tripId={tripId} trip={trip} />}
           {tab === "checklist" && (
             <ChecklistTab
               tripId={tripId}
@@ -299,11 +299,19 @@ export default function TripDetail() {
 /* ═══════════════════════════════
    ITINERARY TAB
    ═══════════════════════════════ */
-function ItineraryTab({ tripId }) {
+function ItineraryTab({ tripId, trip }) {
   const [days, setDays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
+
+  const maxDays = (() => {
+    if (!trip?.startDate || !trip?.endDate) return Infinity;
+    const s = new Date(trip.startDate);
+    const e = new Date(trip.endDate);
+    return Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
+  })();
+  const canAddDay = days.length < maxDays;
 
   const fetchDays = useCallback(() => {
     api
@@ -365,11 +373,15 @@ function ItineraryTab({ tripId }) {
       ))}
       <button
         onClick={addDay}
-        disabled={creating}
-        className="flex items-center gap-2 text-sm font-medium text-[var(--primary)] hover:underline cursor-pointer disabled:opacity-50"
+        disabled={creating || !canAddDay}
+        className="flex items-center gap-2 text-sm font-medium text-[var(--primary)] hover:underline cursor-pointer disabled:opacity-50 disabled:no-underline"
       >
         <Plus size={16} />
-        {creating ? "Adding…" : "Add Day"}
+        {creating
+          ? "Adding…"
+          : !canAddDay
+            ? `All ${maxDays} days added`
+            : "Add Day"}
       </button>
 
       {confirmDelete && (

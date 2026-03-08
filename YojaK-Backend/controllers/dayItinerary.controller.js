@@ -12,6 +12,18 @@ exports.createDayItineraryofTrip = async (req, res) => {
     if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
+
+    // Limit days to trip duration
+    const start = new Date(trip.startDate);
+    const end = new Date(trip.endDate);
+    const maxDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    const existingCount = await DayItinerary.countDocuments({ trip: trip._id });
+    if (existingCount >= maxDays) {
+      return res.status(400).json({
+        message: `Cannot add more than ${maxDays} days for this trip`,
+      });
+    }
+
     const dayItinerary = new DayItinerary({
       trip: trip._id,
       dayNumber,
