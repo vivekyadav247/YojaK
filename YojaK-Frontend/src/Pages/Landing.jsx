@@ -4,7 +4,6 @@ import {
   Users,
   CalendarCheck,
   Wallet,
-  Plane,
   ArrowRight,
   Github,
   Linkedin,
@@ -24,9 +23,7 @@ export default function Landing() {
       <nav className="px-5 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[var(--primary)] flex items-center justify-center">
-              <Plane size={16} className="text-white" />
-            </div>
+            <img src="/logo.svg" alt="YojaK" className="w-9 h-9" />
             <span className="text-lg font-bold text-[var(--text)]">YojaK</span>
           </div>
           <div className="flex items-center gap-2">
@@ -401,9 +398,7 @@ export default function Landing() {
       <footer className="px-5 py-8 border-t border-[var(--cards)]/30">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-[var(--primary)] flex items-center justify-center">
-              <Plane size={12} className="text-white" />
-            </div>
+            <img src="/logo.svg" alt="YojaK" className="w-7 h-7" />
             <span className="text-sm font-bold text-[var(--text)]">YojaK</span>
           </div>
           <p className="text-xs text-[var(--text-light)] flex items-center gap-1">
