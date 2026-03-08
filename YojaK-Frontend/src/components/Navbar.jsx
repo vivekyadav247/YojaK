@@ -17,7 +17,11 @@ export default function Navbar() {
       {/* Desktop top navbar — floating, rounded, glassy */}
       <div className="hidden md:block order-1 px-4 pt-3">
         <nav className="mx-auto max-w-6xl bg-white/60 backdrop-blur-xl border border-[var(--cards)] rounded-2xl shadow-lg shadow-black/5 flex items-center justify-between px-6 h-14">
-          <Link to="/" className="text-xl font-bold text-[var(--primary)]">
+          <Link
+            to="/"
+            className="flex items-center gap-2 text-xl font-bold text-[var(--primary)]"
+          >
+            <img src="/logo.svg" alt="YojaK" className="h-8 w-8" />
             YojaK
           </Link>
           <div className="flex items-center gap-1">
