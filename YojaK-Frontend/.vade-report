@@ -1,0 +1,54 @@
+# Vercel Web Analytics Implementation
+
+## Summary
+Successfully implemented Vercel Web Analytics in the YojaK-Frontend React + Vite project.
+
+## Changes Made
+
+### 1. Installed Dependencies
+- Added `@vercel/analytics` package (version ^1.6.1) to the project dependencies
+
+### 2. Modified Files
+
+#### `src/App.jsx`
+- **Import Added**: Imported the `Analytics` component from `@vercel/analytics/react`
+- **Component Added**: Added `<Analytics />` component at the root level of the App component, just after the `<ClerkLoaded>` wrapper
+- This ensures analytics tracking is active across all routes and pages in the application
+
+#### `package.json`
+- Added `@vercel/analytics` to the dependencies list
+
+#### `package-lock.json`
+- Updated with the new dependency tree for @vercel/analytics and its 218 sub-dependencies
+
+## Implementation Details
+
+The implementation follows the official Vercel Web Analytics guide for React applications:
+- Used the `@vercel/analytics/react` package variant which is appropriate for React + Vite projects
+- Placed the Analytics component at the root level to ensure it tracks all page views and routes
+- The component is positioned after `ClerkLoaded` to ensure authentication state is loaded before analytics tracking begins
+
+## Testing & Verification
+
+1. ✅ **Build Test**: Successfully ran `npm run build` - build completed without errors
+2. ✅ **Linter Check**: Ran `npm run lint` - no new linting errors introduced (pre-existing errors in other files remain unchanged)
+3. ✅ **Package Installation**: All 218 packages installed successfully with no vulnerabilities
+
+## How It Works
+
+Once deployed to Vercel:
+- The Analytics component will automatically track page views across all routes
+- Data will be visible in the Vercel Dashboard under the Analytics tab
+- A Fetch/XHR request to `/_vercel/insights/view` will be visible in the browser's Network tab when visiting any page
+
+## Next Steps for the User
+
+After deployment to Vercel:
+1. Enable Web Analytics in the Vercel Dashboard (Project → Analytics tab → Enable)
+2. Deploy the application to Vercel
+3. View analytics data in the Vercel Dashboard
+
+## Files Modified
+- `src/App.jsx` - Added Analytics component import and usage
+- `package.json` - Added @vercel/analytics dependency
+- `package-lock.json` - Updated with new dependency tree

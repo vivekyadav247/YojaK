@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import { useAuth, ClerkLoaded } from "@clerk/react";
+import { Analytics } from "@vercel/analytics/react";
 import AuthProvider from "./lib/AuthProvider";
 import Landing from "./Pages/Landing";
 import Home from "./Pages/Home";
@@ -44,6 +45,7 @@ export default function App() {
       <ClerkLoaded>
         <AuthGate />
       </ClerkLoaded>
+      <Analytics />
     </div>
   );
 }
