@@ -27,6 +27,7 @@ export default function Invites() {
   const [tripId, setTripId] = useState("");
   const [sendLoading, setSendLoading] = useState(false);
   const [sendMsg, setSendMsg] = useState(null);
+  const [respondError, setRespondError] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -61,12 +62,22 @@ export default function Invites() {
   }, []);
 
   const respond = async (inviteId, status) => {
+    setRespondError(null);
     try {
       await api.put("/invites/respond", { inviteId, status });
       setReceived((prev) =>
         prev.map((inv) => (inv._id === inviteId ? { ...inv, status } : inv)),
       );
-    } catch {}
+    } catch (err) {
+      if (
+        err.response?.status === 403 &&
+        err.response?.data?.isProfileComplete === false
+      ) {
+        setRespondError(
+          "Please complete your profile before accepting invites.",
+        );
+      }
+    }
   };
 
   const respondJoinReq = async (requestId, status) => {
@@ -95,7 +106,10 @@ export default function Invites() {
       });
       setSent((prev) => [data, ...prev]);
       setEmailOrMobile("");
-      setSendMsg({ type: "success", text: "Invite sent!" });
+      const msg = data.receiver
+        ? "Invite sent!"
+        : "Invite email sent! They'll see it once they sign up.";
+      setSendMsg({ type: "success", text: msg });
     } catch (err) {
       setSendMsg({
         type: "error",
@@ -237,6 +251,11 @@ export default function Invites() {
         </div>
 
         {/* List */}
+        {respondError && (
+          <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl">
+            {respondError}
+          </div>
+        )}
         <div className="space-y-3">
           {tab === "received" &&
             (received.length === 0 ? (
@@ -287,7 +306,10 @@ function InviteRow({ inv, type, onRespond, onDelete }) {
   const person =
     type === "received"
       ? inv.sender?.name || inv.sender?.email || "Someone"
-      : inv.receiver?.name || inv.receiver?.email || "Someone";
+      : inv.receiver?.name ||
+        inv.receiver?.email ||
+        inv.receiverEmail ||
+        "Someone";
 
   const statusColors = {
     pending: "text-amber-600 bg-amber-50",
@@ -304,6 +326,11 @@ function InviteRow({ inv, type, onRespond, onDelete }) {
         </p>
         <p className="text-xs text-[var(--text-light)] truncate">
           Trip: {inv.trip?.title || inv.trip}
+          {type === "sent" && !inv.receiver && inv.receiverEmail && (
+            <span className="ml-2 text-[10px] text-[var(--primary)] font-medium">
+              (email sent)
+            </span>
+          )}
         </p>
       </div>
       <div className="flex items-center gap-2 shrink-0 ml-3">

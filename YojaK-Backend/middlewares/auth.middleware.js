@@ -1,5 +1,6 @@
 const { getAuth, clerkClient } = require("@clerk/express");
 const User = require("../models/user.model.js");
+const Invite = require("../models/invites.model.js");
 
 const authMiddleware = async (req, res, next) => {
   try {
@@ -21,6 +22,18 @@ const authMiddleware = async (req, res, next) => {
         name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim(),
         email,
       });
+
+      // Link any pending email-based invites to this new user
+      if (email) {
+        await Invite.updateMany(
+          {
+            receiverEmail: email.toLowerCase(),
+            receiver: null,
+            status: "pending",
+          },
+          { $set: { receiver: user._id } },
+        );
+      }
     } else if (!user.name) {
       const clerkUser = await clerkClient.users.getUser(clerkId);
       user.name =

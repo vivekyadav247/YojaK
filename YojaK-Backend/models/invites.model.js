@@ -3,7 +3,8 @@ const model = require("mongoose").model;
 
 const InviteSchema = new Schema({
   sender: { type: Schema.Types.ObjectId, ref: "User" },
-  receiver: { type: Schema.Types.ObjectId, ref: "User" },
+  receiver: { type: Schema.Types.ObjectId, ref: "User", default: null },
+  receiverEmail: { type: String, trim: true, lowercase: true },
   trip: { type: Schema.Types.ObjectId, ref: "Trip" },
   status: {
     type: String,
