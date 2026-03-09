@@ -15,6 +15,7 @@ import {
   ChevronUp,
   Send,
   Users,
+  MapPin,
   CalendarDays,
   CheckSquare,
   Wallet,
