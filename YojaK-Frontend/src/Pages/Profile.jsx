@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/react";
-import { Save, CheckCircle, AlertCircle, User } from "lucide-react";
+import { Save, CheckCircle, AlertCircle } from "lucide-react";
 import api from "../lib/api";
 
 export default function Profile() {

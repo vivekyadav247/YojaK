@@ -13,6 +13,8 @@ exports.createTrip = async (req, res) => {
       type,
       limitofPeople,
     } = req.body;
+    const normalizedType = type === "solo" ? "solo" : type;
+    const normalizedLimit = normalizedType === "solo" ? 1 : limitofPeople;
 
     // Validate dates are not in the past
     const today = new Date();
@@ -34,8 +36,8 @@ exports.createTrip = async (req, res) => {
       places,
       startDate,
       endDate,
-      type,
-      limitofPeople: type === "solo" ? 1 : limitofPeople,
+      type: normalizedType,
+      limitofPeople: normalizedLimit,
       owner: req.user._id,
       members: [{ user: req.user._id, role: "owner" }],
     });
@@ -74,7 +76,13 @@ exports.getAllPublicTrips = async (req, res) => {
   try {
     const trips = await Trip.find({ type: "public" });
     await Promise.all(trips.map(syncTripStatus));
-    res.json(trips);
+
+    const visibleTrips = trips.filter(
+      (trip) =>
+        trip.status === "planned" && trip.members.length < trip.limitofPeople,
+    );
+
+    res.json(visibleTrips);
   } catch (error) {
     res
       .status(500)
@@ -137,13 +145,24 @@ exports.updateTrip = async (req, res) => {
       limitofPeople,
       status,
     } = req.body;
+
+    if (trip.type === "solo" && type && type !== "solo") {
+      return res.status(400).json({
+        message: "Solo trips cannot be converted to public/private trips",
+      });
+    }
+
     if (title) trip.title = title;
     if (destinations) trip.destinations = destinations;
     if (places) trip.places = places;
     if (startDate) trip.startDate = startDate;
     if (endDate) trip.endDate = endDate;
     if (type) trip.type = type;
-    if (limitofPeople) trip.limitofPeople = limitofPeople;
+    if (type === "solo") {
+      trip.limitofPeople = 1;
+    } else if (limitofPeople) {
+      trip.limitofPeople = limitofPeople;
+    }
     if (status) trip.status = status;
 
     await trip.save();

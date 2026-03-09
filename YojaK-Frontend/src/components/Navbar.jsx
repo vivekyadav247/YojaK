@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
-import { UserButton } from "@clerk/react";
-import { Home, Map, Mail, User } from "lucide-react";
+import { useClerk, useUser } from "@clerk/react";
+import { Home, Map, Mail, User, LogOut } from "lucide-react";
 
 const navItems = [
   { to: "/", label: "Home", icon: Home },
@@ -11,6 +11,8 @@ const navItems = [
 
 export default function Navbar() {
   const { pathname } = useLocation();
+  const { user } = useUser();
+  const { signOut } = useClerk();
 
   return (
     <>
@@ -40,7 +42,27 @@ export default function Navbar() {
               </Link>
             ))}
             <div className="ml-3 pl-3 border-l border-[var(--cards)]/50">
-              <UserButton afterSignOutUrl="/" />
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-[var(--cards)]/30"
+                  title="Profile"
+                >
+                  <img
+                    src={user?.imageUrl || "/logo.svg"}
+                    alt="profile"
+                    className="h-7 w-7 rounded-full border border-[var(--cards)]/70 object-cover"
+                  />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => signOut({ redirectUrl: "/" })}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-red-600 hover:bg-red-50 border border-red-200 cursor-pointer"
+                >
+                  <LogOut size={14} />
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
         </nav>
@@ -64,9 +86,15 @@ export default function Navbar() {
                 <span className="text-[10px] font-semibold">{label}</span>
               </Link>
             ))}
-            <div className="flex flex-col items-center gap-0.5 py-1.5">
-              <UserButton afterSignOutUrl="/" />
-            </div>
+            <button
+              type="button"
+              onClick={() => signOut({ redirectUrl: "/" })}
+              className="flex flex-col items-center gap-0.5 py-1.5 text-red-600"
+              title="Logout"
+            >
+              <LogOut size={20} />
+              <span className="text-[10px] font-semibold">Logout</span>
+            </button>
           </div>
         </nav>
       </div>
