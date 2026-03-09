@@ -40,6 +40,13 @@ import ConfirmModal from "../components/ConfirmModal";
 
 const API_BASE = "http://localhost:3000";
 
+const getApiErrorMessage = (err, fallback) =>
+  err?.response?.data?.message || err?.response?.data?.error || fallback;
+
+const showApiError = (err, fallback = "Action failed") => {
+  window.alert(getApiErrorMessage(err, fallback));
+};
+
 export default function TripDetail() {
   const { tripId } = useParams();
   const navigate = useNavigate();
@@ -48,6 +55,8 @@ export default function TripDetail() {
   const [tab, setTab] = useState("itinerary");
   const [currentUserId, setCurrentUserId] = useState(null);
   const [confirmDeleteTrip, setConfirmDeleteTrip] = useState(false);
+  const [confirmLeaveTrip, setConfirmLeaveTrip] = useState(false);
+  const [leavingTrip, setLeavingTrip] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const reload = useCallback(() => {
@@ -74,6 +83,10 @@ export default function TripDetail() {
         currentUserId &&
         (m.user?._id || m.user)?.toString() === currentUserId,
     ) ?? false;
+  const myMembership = trip?.members?.find(
+    (m) => currentUserId && (m.user?._id || m.user)?.toString() === currentUserId,
+  );
+  const canLeaveTrip = Boolean(myMembership && myMembership.role !== "owner");
 
   const handleDeleteTrip = async () => {
     setDeleting(true);
@@ -83,6 +96,18 @@ export default function TripDetail() {
     } catch {
       setDeleting(false);
       setConfirmDeleteTrip(false);
+    }
+  };
+
+  const handleLeaveTrip = async () => {
+    setLeavingTrip(true);
+    try {
+      await api.post(`/trips/${tripId}/leave`);
+      navigate("/my-trips");
+    } catch (err) {
+      showApiError(err, "Failed to leave trip");
+      setLeavingTrip(false);
+      setConfirmLeaveTrip(false);
     }
   };
 
@@ -134,6 +159,15 @@ export default function TripDetail() {
               >
                 {trip.status}
               </span>
+              {canLeaveTrip && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmLeaveTrip(true)}
+                  className="px-2 py-0.5 rounded-md text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 cursor-pointer"
+                >
+                  Leave
+                </button>
+              )}
               {amOwner && (
                 <button
                   onClick={() => setConfirmDeleteTrip(true)}
@@ -184,13 +218,24 @@ export default function TripDetail() {
                 {trip.destinations?.join(", ")}
               </p>
             </div>
-            <span
-              className={`text-[10px] font-semibold px-2.5 py-1 rounded-full capitalize whitespace-nowrap ${
-                statusColors[trip.status] ?? statusColors.planned
-              }`}
-            >
-              {trip.status}
-            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className={`text-[10px] font-semibold px-2.5 py-1 rounded-full capitalize whitespace-nowrap ${
+                  statusColors[trip.status] ?? statusColors.planned
+                }`}
+              >
+                {trip.status}
+              </span>
+              {canLeaveTrip && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmLeaveTrip(true)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 cursor-pointer"
+                >
+                  Leave Trip
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -200,6 +245,15 @@ export default function TripDetail() {
             message={`Are you sure you want to delete "${trip.title}"? This will permanently remove all itineraries, documents, and data. This cannot be undone.`}
             onConfirm={handleDeleteTrip}
             onCancel={() => setConfirmDeleteTrip(false)}
+          />
+        )}
+        {confirmLeaveTrip && (
+          <ConfirmModal
+            title="Leave Trip?"
+            message="You will be removed from this trip."
+            confirmText={leavingTrip ? "Leaving..." : "Leave"}
+            onConfirm={handleLeaveTrip}
+            onCancel={() => setConfirmLeaveTrip(false)}
           />
         )}
 
@@ -279,15 +333,21 @@ function ItineraryTab({ tripId, trip }) {
         : 1;
       await api.post(`/day-itineraries/trip/${tripId}`, { dayNumber: nextNum });
       fetchDays();
-    } catch {}
+    } catch (err) {
+      showApiError(err, "Failed to add day");
+    }
     setCreating(false);
   };
 
   const deleteDay = async (dayId) => {
-    await api.delete(`/day-itineraries/trip/${tripId}`, {
-      data: { dayItineraryId: dayId },
-    });
-    fetchDays();
+    try {
+      await api.delete(`/day-itineraries/trip/${tripId}`, {
+        data: { dayItineraryId: dayId },
+      });
+      fetchDays();
+    } catch (err) {
+      showApiError(err, "Failed to delete day");
+    }
   };
 
   if (loading) return <Spinner />;
@@ -355,24 +415,34 @@ function DayCard({ day, tripId, trip, onRefresh, onDelete }) {
       );
       setActForm({ time: "", description: "" });
       onRefresh();
-    } catch {}
+    } catch (err) {
+      showApiError(err, "Failed to add activity");
+    }
     setAdding(false);
   };
 
   const removeActivity = async (activityId) => {
-    await api.delete(
-      `/day-itineraries/trip/${tripId}/dayItinerary/${day._id}/activity`,
-      { data: { activityId } },
-    );
-    onRefresh();
+    try {
+      await api.delete(
+        `/day-itineraries/trip/${tripId}/dayItinerary/${day._id}/activity`,
+        { data: { activityId } },
+      );
+      onRefresh();
+    } catch (err) {
+      showApiError(err, "Failed to remove activity");
+    }
   };
 
   const toggleComplete = async (act) => {
-    await api.put(
-      `/day-itineraries/trip/${tripId}/dayItinerary/${day._id}/activity`,
-      { activityId: act._id, isCompleted: !act.isCompleted },
-    );
-    onRefresh();
+    try {
+      await api.put(
+        `/day-itineraries/trip/${tripId}/dayItinerary/${day._id}/activity`,
+        { activityId: act._id, isCompleted: !act.isCompleted },
+      );
+      onRefresh();
+    } catch (err) {
+      showApiError(err, "Failed to update activity");
+    }
   };
 
   const sensors = useSensors(
@@ -385,11 +455,15 @@ function DayCard({ day, tripId, trip, onRefresh, onDelete }) {
     const oldIdx = day.activities.findIndex((a) => a._id === active.id);
     const newIdx = day.activities.findIndex((a) => a._id === over.id);
     const reordered = arrayMove(day.activities, oldIdx, newIdx);
-    await api.put(
-      `/day-itineraries/trip/${tripId}/dayItinerary/${day._id}/activities/reorder`,
-      { activityOrder: reordered.map((a) => a._id) },
-    );
-    onRefresh();
+    try {
+      await api.put(
+        `/day-itineraries/trip/${tripId}/dayItinerary/${day._id}/activities/reorder`,
+        { activityOrder: reordered.map((a) => a._id) },
+      );
+      onRefresh();
+    } catch (err) {
+      showApiError(err, "Failed to reorder activities");
+    }
   };
 
   return (
@@ -621,16 +695,22 @@ function ActivityComments({ tripId, dayId, activity, onRefresh }) {
       );
       setText("");
       onRefresh();
-    } catch {}
+    } catch (err) {
+      showApiError(err, "Failed to add comment");
+    }
     setSending(false);
   };
 
   const removeComment = async (commentId) => {
-    await api.delete(
-      `/day-itineraries/trip/${tripId}/dayItinerary/${dayId}/activity/comment`,
-      { data: { activityId: activity._id, commentId } },
-    );
-    onRefresh();
+    try {
+      await api.delete(
+        `/day-itineraries/trip/${tripId}/dayItinerary/${dayId}/activity/comment`,
+        { data: { activityId: activity._id, commentId } },
+      );
+      onRefresh();
+    } catch (err) {
+      showApiError(err, "Failed to remove comment");
+    }
   };
 
   return (
@@ -684,16 +764,22 @@ function DayComments({ tripId, day, onRefresh }) {
       );
       setText("");
       onRefresh();
-    } catch {}
+    } catch (err) {
+      showApiError(err, "Failed to add comment");
+    }
     setSending(false);
   };
 
   const removeComment = async (commentId) => {
-    await api.delete(
-      `/day-itineraries/trip/${tripId}/dayItinerary/${day._id}/comment`,
-      { data: { commentId } },
-    );
-    onRefresh();
+    try {
+      await api.delete(
+        `/day-itineraries/trip/${tripId}/dayItinerary/${day._id}/comment`,
+        { data: { commentId } },
+      );
+      onRefresh();
+    } catch (err) {
+      showApiError(err, "Failed to remove comment");
+    }
   };
 
   return (
@@ -758,20 +844,30 @@ function ChecklistTab({ tripId, checklist, onUpdate }) {
       });
       setNewItem("");
       onUpdate();
-    } catch {}
+    } catch (err) {
+      showApiError(err, "Failed to add checklist item");
+    }
     setAdding(false);
   };
 
   const toggleItem = async (key, currentVal) => {
-    await api.put(`/trips/${tripId}/checklist/${encodeURIComponent(key)}`, {
-      value: !currentVal,
-    });
-    onUpdate();
+    try {
+      await api.put(`/trips/${tripId}/checklist/${encodeURIComponent(key)}`, {
+        value: !currentVal,
+      });
+      onUpdate();
+    } catch (err) {
+      showApiError(err, "Failed to update checklist item");
+    }
   };
 
   const removeItem = async (key) => {
-    await api.delete(`/trips/${tripId}/checklist/${encodeURIComponent(key)}`);
-    onUpdate();
+    try {
+      await api.delete(`/trips/${tripId}/checklist/${encodeURIComponent(key)}`);
+      onUpdate();
+    } catch (err) {
+      showApiError(err, "Failed to remove checklist item");
+    }
   };
 
   return (
@@ -864,17 +960,21 @@ function BudgetTab({ tripId, trip }) {
 
   const addExpense = async (e) => {
     e.preventDefault();
-    if (!budget) {
-      await api.post(`/budget-trackers/trip/${tripId}`, {});
+    try {
+      if (!budget) {
+        await api.post(`/budget-trackers/trip/${tripId}`, {});
+      }
+      await api.put(`/budget-trackers/trip/${tripId}`, {
+        expense: {
+          description: expForm.description,
+          amount: Number(expForm.amount),
+        },
+      });
+      setExpForm({ description: "", amount: "" });
+      fetchBudget();
+    } catch (err) {
+      showApiError(err, "Failed to add expense");
     }
-    await api.put(`/budget-trackers/trip/${tripId}`, {
-      expense: {
-        description: expForm.description,
-        amount: Number(expForm.amount),
-      },
-    });
-    setExpForm({ description: "", amount: "" });
-    fetchBudget();
   };
 
   if (loading) return <Spinner />;
@@ -1011,19 +1111,29 @@ function DocumentsTab({ tripId }) {
         headers: { "Content-Type": "multipart/form-data" },
       });
       fetchDocs();
-    } catch {}
+    } catch (err) {
+      showApiError(err, "Failed to upload files");
+    }
     setUploading(false);
     e.target.value = "";
   };
 
   const deleteDoc = async (docId, fileId) => {
-    await api.delete(`/documents/${docId}`, { data: { fileId } });
-    fetchDocs();
+    try {
+      await api.delete(`/documents/${docId}`, { data: { fileId } });
+      fetchDocs();
+    } catch (err) {
+      showApiError(err, "Failed to delete file");
+    }
   };
 
   const toggleVisibility = async (docId, fileId, visibility) => {
-    await api.put(`/documents/${docId}/visibility`, { fileId, visibility });
-    fetchDocs();
+    try {
+      await api.put(`/documents/${docId}/visibility`, { fileId, visibility });
+      fetchDocs();
+    } catch (err) {
+      showApiError(err, "Failed to update visibility");
+    }
   };
 
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -1122,10 +1232,8 @@ function DocumentsTab({ tripId }) {
 }
 
 function MembersTab({ trip, tripId, onUpdate }) {
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
-  const [leaving, setLeaving] = useState(false);
   const [msg, setMsg] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [updatingRole, setUpdatingRole] = useState(null);
@@ -1141,12 +1249,12 @@ function MembersTab({ trip, tripId, onUpdate }) {
       .catch(() => {});
   }, []);
 
-  const currentMembership = (trip.members ?? []).find(
+  const amOwner = trip.members?.some(
     (m) =>
+      m.role === "owner" &&
       currentUserId &&
       (m.user?._id || m.user)?.toString() === currentUserId,
   );
-  const amOwner = currentMembership?.role === "owner";
   const amOwnerOrEditor = trip.members?.some(
     (m) =>
       currentUserId &&
@@ -1179,7 +1287,9 @@ function MembersTab({ trip, tripId, onUpdate }) {
         role: newRole,
       });
       onUpdate();
-    } catch {}
+    } catch (err) {
+      showApiError(err, "Failed to change role");
+    }
     setUpdatingRole(null);
   };
 
@@ -1187,21 +1297,8 @@ function MembersTab({ trip, tripId, onUpdate }) {
     try {
       await api.delete(`/trips/${tripId}/members/${memberId}`);
       onUpdate();
-    } catch {}
-  };
-
-  const handleLeaveTrip = async () => {
-    setLeaving(true);
-    try {
-      await api.post(`/trips/${tripId}/leave`);
-      navigate("/my-trips");
     } catch (err) {
-      setMsg({
-        type: "error",
-        text: err.response?.data?.message || "Failed to leave trip",
-      });
-      setLeaving(false);
-      setConfirmAction(null);
+      showApiError(err, "Failed to remove member");
     }
   };
 
@@ -1213,27 +1310,6 @@ function MembersTab({ trip, tripId, onUpdate }) {
 
   return (
     <div className="space-y-4">
-      {currentMembership && !amOwner && (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            disabled={leaving}
-            onClick={() =>
-              setConfirmAction({
-                title: "Leave Trip?",
-                message: "You will be removed from this trip.",
-                confirmText: "Leave",
-                action: handleLeaveTrip,
-              })
-            }
-            className="px-4 py-2 rounded-lg border border-red-200 bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-100 disabled:opacity-60 cursor-pointer"
-          >
-            {leaving ? "Leaving..." : "Leave Trip"}
-          </button>
-        </div>
-      )}
-
-      {/* Members list */}
       <div className="space-y-2">
         {(trip.members ?? []).map((m, i) => {
           const memberId = (m.user?._id || m.user)?.toString();
