@@ -44,8 +44,7 @@ exports.getDocumentsByTripId = async (req, res) => {
   try {
     const trip = await Trip.findById(req.params.tripId);
     if (!trip) return res.status(404).json({ message: "Trip not found" });
-    const isTripMember = isMember(trip, req.user._id);
-    if (trip.type !== "public" && !isTripMember) {
+    if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
 
@@ -80,7 +79,7 @@ exports.getDocumentsByTripId = async (req, res) => {
 exports.toggleFileVisibility = async (req, res) => {
   try {
     const { id } = req.params;
-    const { fileId } = req.body;
+    const { fileId, visibility } = req.body;
 
     const document = await Document.findById(id);
     if (!document)
@@ -94,7 +93,12 @@ exports.toggleFileVisibility = async (req, res) => {
         .json({ message: "Can only change visibility of your own files" });
     }
 
-    file.visibility = file.visibility === "everyone" ? "private" : "everyone";
+    if (visibility && !["private", "everyone"].includes(visibility)) {
+      return res.status(400).json({ message: "Invalid visibility option" });
+    }
+
+    file.visibility =
+      visibility || (file.visibility === "everyone" ? "private" : "everyone");
     await document.save();
     res.json({ fileId, visibility: file.visibility });
   } catch (error) {

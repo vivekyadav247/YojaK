@@ -1,7 +1,7 @@
 ﻿const Invite = require("../models/invites.model");
 const User = require("../models/user.model");
 const Trip = require("../models/trip.model");
-const { isMember } = require("../utils/tripAuth");
+const { isMember, isOwnerOrEditor } = require("../utils/tripAuth");
 const { syncTripStatus } = require("./trip.controller");
 
 const isEmail = (str) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str);
@@ -18,6 +18,11 @@ exports.sendInvite = async (req, res) => {
       return res
         .status(400)
         .json({ error: "Can only send invites for trips in planned status" });
+    }
+    if (!isOwnerOrEditor(trip, req.user._id)) {
+      return res
+        .status(403)
+        .json({ error: "Only trip owner or editor can send invites" });
     }
 
     // Find receiver by email or mobile
@@ -131,6 +136,20 @@ exports.respondToInvite = async (req, res) => {
 exports.deleteInvite = async (req, res) => {
   try {
     const { inviteId } = req.params;
+    const invite = await Invite.findById(inviteId);
+    if (!invite) {
+      return res.status(404).json({ error: "Invite not found" });
+    }
+
+    const trip = await Trip.findById(invite.trip);
+    const canDelete =
+      invite.sender?.toString() === req.user._id.toString() ||
+      (trip && isOwnerOrEditor(trip, req.user._id));
+
+    if (!canDelete) {
+      return res.status(403).json({ error: "Not authorized to delete invite" });
+    }
+
     await Invite.findByIdAndDelete(inviteId);
     res.status(200).json({ message: "Invite deleted" });
   } catch (error) {

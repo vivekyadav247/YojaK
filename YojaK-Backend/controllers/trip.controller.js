@@ -93,7 +93,7 @@ exports.getAllPublicTrips = async (req, res) => {
 exports.getTrips = async (req, res) => {
   try {
     const trips = await Trip.find({ "members.user": req.user._id })
-      .populate("members.user", "name email")
+      .populate("members.user", "name email age gender location mobileNumber")
       .populate("budgetTracker")
       .populate("dayItineraryIds");
     await Promise.all(trips.map(syncTripStatus));
@@ -108,7 +108,7 @@ exports.getTrips = async (req, res) => {
 exports.getTripById = async (req, res) => {
   try {
     const trip = await Trip.findById(req.params.id)
-      .populate("members.user", "name email")
+      .populate("members.user", "name email age gender location mobileNumber")
       .populate("budgetTracker")
       .populate("dayItineraryIds");
     if (!trip) {
@@ -143,7 +143,6 @@ exports.updateTrip = async (req, res) => {
       endDate,
       type,
       limitofPeople,
-      status,
     } = req.body;
 
     if (trip.type === "solo" && type && type !== "solo") {
@@ -163,8 +162,6 @@ exports.updateTrip = async (req, res) => {
     } else if (limitofPeople) {
       trip.limitofPeople = limitofPeople;
     }
-    if (status) trip.status = status;
-
     await trip.save();
     res.json(trip);
   } catch (error) {
@@ -194,7 +191,7 @@ exports.getTripMembers = async (req, res) => {
   try {
     const trip = await Trip.findById(req.params.id).populate(
       "members.user",
-      "name email",
+      "name email age gender location mobileNumber",
     );
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
@@ -297,9 +294,23 @@ exports.leaveTrip = async (req, res) => {
     } else if (!isMember(trip, req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
-    const memberIndex = trip.members.findIndex(
-      (m) => (m.user._id || m.user).toString() === req.user._id.toString(),
-    );
+
+    const memberIndex = trip.members.findIndex((m) => {
+      const memberId = (m.user._id || m.user).toString();
+      return memberId === req.user._id.toString();
+    });
+
+    if (memberIndex === -1) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    const member = trip.members[memberIndex];
+    if (member.role === "owner") {
+      return res.status(400).json({
+        message: "Owner cannot leave the trip. Delete the trip instead.",
+      });
+    }
+
     trip.members.splice(memberIndex, 1);
     await trip.save();
     res.json(trip.members);

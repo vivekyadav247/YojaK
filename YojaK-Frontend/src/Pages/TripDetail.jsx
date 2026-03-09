@@ -39,7 +39,6 @@ import ConfirmModal from "../components/ConfirmModal";
 
 const API_BASE = "http://localhost:3000";
 
-/* ───── Main page ───── */
 export default function TripDetail() {
   const { tripId } = useParams();
   const navigate = useNavigate();
@@ -47,7 +46,6 @@ export default function TripDetail() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("itinerary");
   const [currentUserId, setCurrentUserId] = useState(null);
-  const [statusUpdating, setStatusUpdating] = useState(false);
   const [confirmDeleteTrip, setConfirmDeleteTrip] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -68,14 +66,6 @@ export default function TripDetail() {
       .catch(() => {});
   }, []);
 
-  const amOwnerOrEditor =
-    trip?.members?.some(
-      (m) =>
-        (m.role === "owner" || m.role === "editor") &&
-        currentUserId &&
-        (m.user?._id || m.user)?.toString() === currentUserId,
-    ) ?? false;
-
   const amOwner =
     trip?.members?.some(
       (m) =>
@@ -83,16 +73,6 @@ export default function TripDetail() {
         currentUserId &&
         (m.user?._id || m.user)?.toString() === currentUserId,
     ) ?? false;
-
-  const handleStatusChange = async (newStatus) => {
-    if (!trip || newStatus === trip.status) return;
-    setStatusUpdating(true);
-    try {
-      await api.put(`/trips/${tripId}`, { status: newStatus });
-      setTrip((prev) => ({ ...prev, status: newStatus }));
-    } catch {}
-    setStatusUpdating(false);
-  };
 
   const handleDeleteTrip = async () => {
     setDeleting(true);
@@ -146,31 +126,13 @@ export default function TripDetail() {
               <ArrowLeft size={14} /> Back
             </button>
             <div className="flex items-center gap-2">
-              {amOwnerOrEditor ? (
-                <select
-                  value={trip.status}
-                  onChange={(e) => handleStatusChange(e.target.value)}
-                  disabled={statusUpdating}
-                  className={`text-[9px] font-semibold px-2 py-0.5 rounded-full capitalize whitespace-nowrap cursor-pointer border-none outline-none appearance-none pr-4 bg-no-repeat bg-[length:10px] bg-[right_3px_center] ${
-                    statusColors[trip.status] ?? statusColors.planned
-                  }`}
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-                  }}
-                >
-                  <option value="planned">Planned</option>
-                  <option value="ongoing">Ongoing</option>
-                  <option value="completed">Completed</option>
-                </select>
-              ) : (
-                <span
-                  className={`text-[9px] font-semibold px-2 py-0.5 rounded-full capitalize whitespace-nowrap ${
-                    statusColors[trip.status] ?? statusColors.planned
-                  }`}
-                >
-                  {trip.status}
-                </span>
-              )}
+              <span
+                className={`text-[9px] font-semibold px-2 py-0.5 rounded-full capitalize whitespace-nowrap ${
+                  statusColors[trip.status] ?? statusColors.planned
+                }`}
+              >
+                {trip.status}
+              </span>
               {amOwner && (
                 <button
                   onClick={() => setConfirmDeleteTrip(true)}
@@ -221,31 +183,13 @@ export default function TripDetail() {
                 {trip.destinations?.join(", ")}
               </p>
             </div>
-            {amOwnerOrEditor ? (
-              <select
-                value={trip.status}
-                onChange={(e) => handleStatusChange(e.target.value)}
-                disabled={statusUpdating}
-                className={`text-[10px] font-semibold px-2.5 py-1 rounded-full capitalize whitespace-nowrap cursor-pointer border-none outline-none appearance-none pr-5 bg-no-repeat bg-[length:12px] bg-[right_4px_center] ${
-                  statusColors[trip.status] ?? statusColors.planned
-                }`}
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-                }}
-              >
-                <option value="planned">Planned</option>
-                <option value="ongoing">Ongoing</option>
-                <option value="completed">Completed</option>
-              </select>
-            ) : (
-              <span
-                className={`text-[10px] font-semibold px-2.5 py-1 rounded-full capitalize whitespace-nowrap ${
-                  statusColors[trip.status] ?? statusColors.planned
-                }`}
-              >
-                {trip.status}
-              </span>
-            )}
+            <span
+              className={`text-[10px] font-semibold px-2.5 py-1 rounded-full capitalize whitespace-nowrap ${
+                statusColors[trip.status] ?? statusColors.planned
+              }`}
+            >
+              {trip.status}
+            </span>
           </div>
         </div>
 
@@ -296,9 +240,6 @@ export default function TripDetail() {
   );
 }
 
-/* ═══════════════════════════════
-   ITINERARY TAB
-   ═══════════════════════════════ */
 function ItineraryTab({ tripId, trip }) {
   const [days, setDays] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -397,7 +338,6 @@ function ItineraryTab({ tripId, trip }) {
   );
 }
 
-/* ── Day card with activities ── */
 function DayCard({ day, tripId, trip, onRefresh, onDelete }) {
   const [open, setOpen] = useState(true);
   const [actForm, setActForm] = useState({ time: "", description: "" });
@@ -434,7 +374,6 @@ function DayCard({ day, tripId, trip, onRefresh, onDelete }) {
     onRefresh();
   };
 
-  /* Drag-and-drop reorder */
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
@@ -578,7 +517,6 @@ function DayCard({ day, tripId, trip, onRefresh, onDelete }) {
   );
 }
 
-/* ── Sortable activity row ── */
 function SortableActivity({
   act,
   index,
@@ -667,7 +605,6 @@ function SortableActivity({
   );
 }
 
-/* ── Activity comments ── */
 function ActivityComments({ tripId, dayId, activity, onRefresh }) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -730,7 +667,6 @@ function ActivityComments({ tripId, dayId, activity, onRefresh }) {
   );
 }
 
-/* ── Day-level comments ── */
 function DayComments({ tripId, day, onRefresh }) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -804,9 +740,6 @@ function DayComments({ tripId, day, onRefresh }) {
   );
 }
 
-/* ═══════════════════════════════
-   CHECKLIST TAB
-   ═══════════════════════════════ */
 function ChecklistTab({ tripId, checklist, onUpdate }) {
   const items = checklist ? Object.entries(checklist) : [];
   const [newItem, setNewItem] = useState("");
@@ -913,9 +846,6 @@ function ChecklistTab({ tripId, checklist, onUpdate }) {
   );
 }
 
-/* ═══════════════════════════════
-   BUDGET TAB
-   ═══════════════════════════════ */
 function BudgetTab({ tripId, trip }) {
   const [budget, setBudget] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -952,6 +882,8 @@ function BudgetTab({ tripId, trip }) {
     (s, e) => s + (e.amount || 0),
     0,
   );
+  const memberCount = trip?.members?.length || 1;
+  const perPersonSpend = totalSpent / memberCount;
 
   return (
     <div className="space-y-4">
@@ -962,13 +894,11 @@ function BudgetTab({ tripId, trip }) {
             value={`₹${totalSpent}`}
             variant="spent"
           />
-          {(trip?.members?.length ?? 0) > 1 && (
-            <StatCard
-              label="Per Person"
-              value={`₹${(totalSpent / trip.members.length).toFixed(2)}`}
-              variant="remaining"
-            />
-          )}
+          <StatCard
+            label="Per Person"
+            value={`₹${perPersonSpend.toFixed(2)}`}
+            variant="remaining"
+          />
         </div>
       )}
 
@@ -976,7 +906,11 @@ function BudgetTab({ tripId, trip }) {
         {(budget?.expenses ?? []).map((ex, i) => (
           <div
             key={i}
-            className="flex items-center justify-between bg-white/60 backdrop-blur-sm p-3 rounded-xl border border-[var(--cards)]/40 text-sm"
+            className={`flex items-center justify-between p-3 rounded-xl border text-sm ${
+              i % 2 === 0
+                ? "bg-[var(--accent)]/10 border-[var(--accent)]/20"
+                : "bg-[var(--primary)]/10 border-[var(--primary)]/20"
+            }`}
           >
             <span className="font-semibold text-[var(--text)]">
               ₹{ex.amount}
@@ -1042,9 +976,6 @@ function StatCard({ label, value, highlight, variant }) {
   );
 }
 
-/* ═══════════════════════════════
-   DOCUMENTS TAB
-   ═══════════════════════════════ */
 function DocumentsTab({ tripId }) {
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1089,8 +1020,8 @@ function DocumentsTab({ tripId }) {
     fetchDocs();
   };
 
-  const toggleVisibility = async (docId, fileId) => {
-    await api.put(`/documents/${docId}/visibility`, { fileId });
+  const toggleVisibility = async (docId, fileId, visibility) => {
+    await api.put(`/documents/${docId}/visibility`, { fileId, visibility });
     fetchDocs();
   };
 
@@ -1138,21 +1069,16 @@ function DocumentsTab({ tripId }) {
               </a>
               <div className="flex items-center gap-2 shrink-0 ml-2">
                 {f.isOwn && (
-                  <button
-                    onClick={() => toggleVisibility(f.docId, f._id)}
-                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full cursor-pointer transition-colors ${
-                      f.visibility === "everyone"
-                        ? "bg-green-100 text-green-700 hover:bg-green-200"
-                        : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                    }`}
-                    title={
-                      f.visibility === "everyone"
-                        ? "Visible to all members"
-                        : "Only you can see this"
+                  <select
+                    value={f.visibility || "private"}
+                    onChange={(e) =>
+                      toggleVisibility(f.docId, f._id, e.target.value)
                     }
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-[var(--cards)] bg-white/70 text-[var(--text)] cursor-pointer"
                   >
-                    {f.visibility === "everyone" ? "Everyone" : "Private"}
-                  </button>
+                    <option value="private">Private</option>
+                    <option value="everyone">Everyone</option>
+                  </select>
                 )}
                 {!f.isOwn && (
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
@@ -1194,12 +1120,11 @@ function DocumentsTab({ tripId }) {
   );
 }
 
-/* ═══════════════════════════════
-   MEMBERS TAB
-   ═══════════════════════════════ */
 function MembersTab({ trip, tripId, onUpdate }) {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [msg, setMsg] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [updatingRole, setUpdatingRole] = useState(null);
@@ -1215,11 +1140,17 @@ function MembersTab({ trip, tripId, onUpdate }) {
       .catch(() => {});
   }, []);
 
-  const amOwner = trip.members?.some(
+  const currentMembership = (trip.members ?? []).find(
     (m) =>
-      m.role === "owner" &&
       currentUserId &&
       (m.user?._id || m.user)?.toString() === currentUserId,
+  );
+  const amOwner = currentMembership?.role === "owner";
+  const amOwnerOrEditor = trip.members?.some(
+    (m) =>
+      currentUserId &&
+      (m.user?._id || m.user)?.toString() === currentUserId &&
+      (m.role === "owner" || m.role === "editor"),
   );
 
   const handleInvite = async (e) => {
@@ -1258,6 +1189,21 @@ function MembersTab({ trip, tripId, onUpdate }) {
     } catch {}
   };
 
+  const handleLeaveTrip = async () => {
+    setLeaving(true);
+    try {
+      await api.post(`/trips/${tripId}/leave`);
+      navigate("/my-trips");
+    } catch (err) {
+      setMsg({
+        type: "error",
+        text: err.response?.data?.message || "Failed to leave trip",
+      });
+      setLeaving(false);
+      setConfirmAction(null);
+    }
+  };
+
   const roleColors = {
     owner: "bg-[var(--primary)]/15 text-[var(--primary)]",
     editor: "bg-amber-100 text-amber-700",
@@ -1266,6 +1212,26 @@ function MembersTab({ trip, tripId, onUpdate }) {
 
   return (
     <div className="space-y-4">
+      {currentMembership && !amOwner && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            disabled={leaving}
+            onClick={() =>
+              setConfirmAction({
+                title: "Leave Trip?",
+                message: "You will be removed from this trip.",
+                confirmText: "Leave",
+                action: handleLeaveTrip,
+              })
+            }
+            className="px-4 py-2 rounded-lg border border-red-200 bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-100 disabled:opacity-60 cursor-pointer"
+          >
+            {leaving ? "Leaving..." : "Leave Trip"}
+          </button>
+        </div>
+      )}
+
       {/* Members list */}
       <div className="space-y-2">
         {(trip.members ?? []).map((m, i) => {
@@ -1287,6 +1253,24 @@ function MembersTab({ trip, tripId, onUpdate }) {
                 <p className="text-xs text-[var(--text-light)] truncate">
                   {m.user?.email ?? ""}
                 </p>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {m.user?.age !== undefined && m.user?.age !== null && (
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[var(--accent)]/10 text-[var(--accent)]">
+                      Age {m.user.age}
+                    </span>
+                  )}
+                  {m.user?.gender && (
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] capitalize">
+                      {m.user.gender}
+                    </span>
+                  )}
+                  {m.user?.location && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[var(--secondary)]/20 text-[var(--text)]">
+                      <MapPin size={11} />
+                      {m.user.location}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Role: if owner viewing non-owner → show dropdown */}
@@ -1338,7 +1322,7 @@ function MembersTab({ trip, tripId, onUpdate }) {
       </div>
 
       {/* Invite form */}
-      {trip.type !== "solo" && (
+      {trip.type !== "solo" && amOwnerOrEditor && (
         <form
           onSubmit={handleInvite}
           className="bg-white/60 backdrop-blur-sm p-4 rounded-2xl border border-[var(--cards)]/40 space-y-3"
@@ -1380,6 +1364,7 @@ function MembersTab({ trip, tripId, onUpdate }) {
         <ConfirmModal
           title={confirmAction.title}
           message={confirmAction.message}
+          confirmText={confirmAction.confirmText}
           onConfirm={confirmAction.action}
           onCancel={() => setConfirmAction(null)}
         />
@@ -1388,7 +1373,6 @@ function MembersTab({ trip, tripId, onUpdate }) {
   );
 }
 
-/* ── Shared spinner ── */
 function Spinner() {
   return (
     <div className="flex items-center justify-center py-12">
