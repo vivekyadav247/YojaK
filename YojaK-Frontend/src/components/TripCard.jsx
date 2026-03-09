@@ -19,6 +19,7 @@ export default function TripCard({
   trip,
   joinStatus,
   onJoinRequest,
+  joinDisabled = false,
   joinLoading,
 }) {
   const fmt = (d) =>
@@ -58,7 +59,7 @@ export default function TripCard({
           ) : (
             <button
               onClick={handleJoin}
-              disabled={joinLoading}
+              disabled={joinLoading || joinDisabled}
               className="w-7 h-7 flex items-center justify-center rounded-full bg-[var(--primary)] text-white hover:opacity-90 disabled:opacity-50 cursor-pointer"
             >
               {joinLoading ? (
@@ -119,7 +120,7 @@ export default function TripCard({
           ) : (
             <button
               onClick={handleJoin}
-              disabled={joinLoading}
+              disabled={joinLoading || joinDisabled}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
             >
               {joinLoading ? (

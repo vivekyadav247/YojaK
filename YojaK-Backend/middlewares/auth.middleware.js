@@ -2,6 +2,21 @@ const { getAuth, clerkClient } = require("@clerk/express");
 const User = require("../models/user.model.js");
 const Invite = require("../models/invites.model.js");
 
+const resolveClerkName = (clerkUser, email = "") => {
+  const fromFirstLast =
+    `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim();
+  if (fromFirstLast) return fromFirstLast;
+
+  const fromFullName = (clerkUser.fullName || "").trim();
+  if (fromFullName) return fromFullName;
+
+  const fromUsername = (clerkUser.username || "").trim();
+  if (fromUsername) return fromUsername;
+
+  const emailPrefix = email.split("@")[0]?.trim();
+  return emailPrefix || "";
+};
+
 const authMiddleware = async (req, res, next) => {
   if (req.method === "OPTIONS") {
     return next();
@@ -23,7 +38,7 @@ const authMiddleware = async (req, res, next) => {
         )?.emailAddress || "";
       user = await User.create({
         clerkId,
-        name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim(),
+        name: resolveClerkName(clerkUser, email),
         email,
       });
 
@@ -38,10 +53,9 @@ const authMiddleware = async (req, res, next) => {
           { $set: { receiver: user._id } },
         );
       }
-    } else if (!user.name) {
+    } else if (!user.name?.trim()) {
       const clerkUser = await clerkClient.users.getUser(clerkId);
-      user.name =
-        `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim();
+      user.name = resolveClerkName(clerkUser, user.email || "");
       await user.save();
     }
 

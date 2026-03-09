@@ -1,6 +1,6 @@
 const JoinRequest = require("../models/joinRequest.model");
 const Trip = require("../models/trip.model");
-const { isMember, isOwner } = require("../utils/tripAuth");
+const { isMember, isOwnerOrEditor } = require("../utils/tripAuth");
 const { syncTripStatus } = require("./trip.controller");
 
 // POST /join-requests/send  — user requests to join a public trip
@@ -64,10 +64,10 @@ exports.getTripJoinRequests = async (req, res) => {
   try {
     const trip = await Trip.findById(req.params.tripId);
     if (!trip) return res.status(404).json({ error: "Trip not found" });
-    if (!isOwner(trip, req.user._id)) {
+    if (!isOwnerOrEditor(trip, req.user._id)) {
       return res
         .status(403)
-        .json({ error: "Only the trip owner can view join requests" });
+        .json({ error: "Only trip owner or editor can view join requests" });
     }
 
     const requests = await JoinRequest.find({
@@ -95,8 +95,8 @@ exports.respondToJoinRequest = async (req, res) => {
 
     const trip = await Trip.findById(jr.trip);
     if (!trip) return res.status(404).json({ error: "Trip not found" });
-    if (!isOwner(trip, req.user._id)) {
-      return res.status(403).json({ error: "Only the trip owner can respond" });
+    if (!isOwnerOrEditor(trip, req.user._id)) {
+      return res.status(403).json({ error: "Only trip owner or editor can respond" });
     }
 
     if (status === "accepted") {
@@ -128,3 +128,4 @@ exports.respondToJoinRequest = async (req, res) => {
     res.status(500).json({ error: "Failed to respond to join request" });
   }
 };
+

@@ -8,10 +8,10 @@ export default function Home() {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [isActive, setIsActive] = useState(null); // null = not fetched yet
+  const [isActive, setIsActive] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const [joinMap, setJoinMap] = useState({});
   const [joinLoadingId, setJoinLoadingId] = useState(null);
-  const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
     api
@@ -23,15 +23,17 @@ export default function Home() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (loading || profileLoaded) return;
+    fetchProfileAndJoinData(trips);
+  }, [loading, trips, profileLoaded]);
+
   const fetchProfileAndJoinData = async (tripList) => {
     try {
-      const [profileRes, jrRes] = await Promise.all([
-        api.get("/profile"),
-        api.get("/join-requests/my"),
-      ]);
+      const profileRes = await api.get("/profile");
       const u = profileRes.data.user ?? profileRes.data;
-      setIsActive(u.isProfileComplete);
-      setCurrentUserId(u._id);
+      const active = Boolean(u.isProfileComplete);
+      setIsActive(active);
 
       const map = {};
       tripList.forEach((t) => {
@@ -45,33 +47,34 @@ export default function Home() {
           map[t._id] = "member";
         }
       });
-      const requests = jrRes.data ?? [];
-      requests.forEach((jr) => {
-        const tid = jr.trip?._id || jr.trip;
-        if (!map[tid]) map[tid] = jr.status;
-      });
+
+      // Pending join statuses are useful only for active profiles.
+      if (active) {
+        const jrRes = await api.get("/join-requests/my");
+        const requests = jrRes.data ?? [];
+        requests.forEach((jr) => {
+          const tid = jr.trip?._id || jr.trip;
+          if (!map[tid]) map[tid] = jr.status;
+        });
+      }
       setJoinMap(map);
-      return u.isProfileComplete;
     } catch {
-      return false;
+      setIsActive(false);
+    } finally {
+      setProfileLoaded(true);
     }
   };
 
-  const handleCreateClick = async () => {
-    if (isActive === null) {
-      const active = await fetchProfileAndJoinData(trips);
-      if (!active) return;
-    }
-    if (isActive === false) return;
+  const handleCreateClick = () => {
+    if (!profileLoaded || !isActive) return;
     setShowModal(true);
   };
 
   const handleJoinRequest = async (tripId) => {
-    if (isActive === null) {
-      const active = await fetchProfileAndJoinData(trips);
-      if (!active) return;
+    if (!profileLoaded || !isActive) {
+      alert("Complete your profile to join public trips.");
+      return;
     }
-    if (!isActive) return;
     setJoinLoadingId(tripId);
     try {
       await api.post("/join-requests/send", { tripId });
@@ -117,7 +120,7 @@ export default function Home() {
           </div>
           <button
             onClick={handleCreateClick}
-            disabled={isActive === false}
+            disabled={!profileLoaded || !isActive}
             className="p-2.5 rounded-xl bg-[var(--accent)] text-white hover:opacity-90 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
             <Plus size={18} />
@@ -143,9 +146,9 @@ export default function Home() {
           </div>
           <button
             onClick={handleCreateClick}
-            disabled={isActive === false}
+            disabled={!profileLoaded || !isActive}
             title={
-              isActive === false
+              !isActive
                 ? "Complete your profile first"
                 : "Create a new trip"
             }
@@ -156,9 +159,9 @@ export default function Home() {
           </button>
         </div>
 
-        {isActive === false && (
+        {profileLoaded && !isActive && (
           <p className="mb-4 text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3">
-            Complete your profile to create trips.
+            Complete your profile to create trips and join public trips.
           </p>
         )}
 
@@ -174,6 +177,7 @@ export default function Home() {
                 trip={t}
                 joinStatus={joinMap[t._id]}
                 onJoinRequest={handleJoinRequest}
+                joinDisabled={!profileLoaded || !isActive}
                 joinLoading={joinLoadingId === t._id}
               />
             ))}

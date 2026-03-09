@@ -34,21 +34,32 @@ export default function Invites() {
       api.get("/invites/received"),
       api.get("/invites/sent"),
       api.get("/trips/trips"),
+      api.get("/profile"),
     ])
-      .then(([r, s, t]) => {
+      .then(([r, s, t, p]) => {
         setReceived(r.data ?? []);
         setSent(s.data ?? []);
         const tripList = t.data.trips ?? t.data ?? [];
         setTrips(tripList);
         if (tripList.length) setTripId(tripList[0]._id);
 
-        // Fetch join requests for each trip the user owns
-        const ownedTrips = tripList.filter((tr) =>
-          tr.members?.some((m) => m.role === "owner"),
+        const currentUserId = (p.data.user ?? p.data)?._id?.toString();
+
+        // Fetch join requests only for trips where current user is owner/editor
+        const managedTrips = tripList.filter((tr) =>
+          tr.members?.some((m) => {
+            const memberId = (m.user?._id || m.user)?.toString();
+            const role = m.role;
+            return (
+              memberId === currentUserId &&
+              (role === "owner" || role === "editor")
+            );
+          }),
         );
-        if (ownedTrips.length) {
+
+        if (managedTrips.length) {
           Promise.all(
-            ownedTrips.map((tr) => api.get(`/join-requests/trip/${tr._id}`)),
+            managedTrips.map((tr) => api.get(`/join-requests/trip/${tr._id}`)),
           )
             .then((results) => {
               const all = results.flatMap((res) => res.data ?? []);
