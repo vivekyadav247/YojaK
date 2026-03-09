@@ -3,6 +3,10 @@ const User = require("../models/user.model.js");
 const Invite = require("../models/invites.model.js");
 
 const authMiddleware = async (req, res, next) => {
+  if (req.method === "OPTIONS") {
+    return next();
+  }
+
   try {
     const { userId: clerkId } = getAuth(req);
     if (!clerkId) {

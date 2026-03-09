@@ -14,19 +14,41 @@ const profileComplete = require("./middlewares/profileComplete.middleware.js");
 const authMiddleware = require("./middlewares/auth.middleware.js");
 
 const app = express();
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "https://yojak.vivekdev.live",
-];
-if (process.env.FRONTEND_URL) allowedOrigins.push(process.env.FRONTEND_URL);
+
+const normalizeOrigin = (origin) => {
+  if (!origin) return origin;
+  return origin.replace(/\/+$/, "");
+};
+
+const allowedOrigins = new Set(
+  [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "https://yojak.vivekdev.live",
+    process.env.FRONTEND_URL,
+  ]
+    .filter(Boolean)
+    .map(normalizeOrigin),
+);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow non-browser clients (no Origin header)
+    if (!origin) return callback(null, true);
+    const normalized = normalizeOrigin(origin);
+    if (allowedOrigins.has(normalized)) return callback(null, true);
+    return callback(null, false);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 204,
+};
 
 app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-  }),
+  cors(corsOptions),
 );
+app.options(/.*/, cors(corsOptions));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(clerkMiddleware());
