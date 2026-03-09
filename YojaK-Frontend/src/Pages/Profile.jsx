@@ -17,18 +17,43 @@ export default function Profile() {
   const [msg, setMsg] = useState(null);
 
   useEffect(() => {
-    api.get("/profile").then(({ data }) => {
-      const u = data.user ?? data;
-      setForm({
-        name: u.name || clerkUser?.fullName || "",
-        mobileNumber: u.mobileNumber || "",
-        age: u.age ?? "",
-        gender: u.gender || "",
-        location: u.location || "",
-      });
-      setIsProfileComplete(u.isProfileComplete);
-    });
-  }, [clerkUser]);
+    let isCancelled = false;
+
+    const loadProfile = async () => {
+      try {
+        const { data } = await api.get("/profile");
+        if (isCancelled) return;
+
+        const u = data.user ?? data;
+        setForm({
+          name: u.name || clerkUser?.fullName || "",
+          mobileNumber: u.mobileNumber || "",
+          age: u.age ?? "",
+          gender: u.gender || "",
+          location: u.location || "",
+        });
+        setIsProfileComplete(Boolean(u.isProfileComplete));
+      } catch (err) {
+        if (isCancelled) return;
+
+        setForm((prev) => ({
+          ...prev,
+          name: clerkUser?.fullName || prev.name,
+        }));
+
+        if (err.response?.status === 401) {
+          setMsg({ type: "error", text: "Session expired. Please login again." });
+        } else {
+          setMsg({ type: "error", text: "Could not load profile." });
+        }
+      }
+    };
+
+    loadProfile();
+    return () => {
+      isCancelled = true;
+    };
+  }, [clerkUser?.fullName, clerkUser?.id]);
 
   const handleChange = (e) => {
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));

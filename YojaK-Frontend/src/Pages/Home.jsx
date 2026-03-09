@@ -8,8 +8,8 @@ export default function Home() {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [isActive, setIsActive] = useState(false);
-  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [isActive, setIsActive] = useState(null);
+  const [checkingProfile, setCheckingProfile] = useState(false);
   const [joinMap, setJoinMap] = useState({});
   const [joinLoadingId, setJoinLoadingId] = useState(null);
 
@@ -23,58 +23,48 @@ export default function Home() {
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    if (loading || profileLoaded) return;
-    fetchProfileAndJoinData(trips);
-  }, [loading, trips, profileLoaded]);
+  const ensureActiveProfile = async () => {
+    if (isActive === true) return true;
+    if (isActive === false) {
+      alert("Complete your profile to create and join trips.");
+      return false;
+    }
+    if (checkingProfile) return false;
 
-  const fetchProfileAndJoinData = async (tripList) => {
+    setCheckingProfile(true);
     try {
       const profileRes = await api.get("/profile");
       const u = profileRes.data.user ?? profileRes.data;
       const active = Boolean(u.isProfileComplete);
       setIsActive(active);
-
-      const map = {};
-      tripList.forEach((t) => {
-        if (
-          t.members?.some(
-            (m) =>
-              (m.user?._id || m.user) === u._id ||
-              (m.user?._id || m.user)?.toString?.() === u._id?.toString?.(),
-          )
-        ) {
-          map[t._id] = "member";
-        }
-      });
-
-      // Pending join statuses are useful only for active profiles.
-      if (active) {
-        const jrRes = await api.get("/join-requests/my");
-        const requests = jrRes.data ?? [];
-        requests.forEach((jr) => {
-          const tid = jr.trip?._id || jr.trip;
-          if (!map[tid]) map[tid] = jr.status;
-        });
+      if (!active) {
+        alert("Complete your profile to create and join trips.");
+        return false;
       }
-      setJoinMap(map);
-    } catch {
-      setIsActive(false);
+      return true;
+    } catch (err) {
+      setIsActive(null);
+      if (err.response?.status === 401) {
+        alert("Session expired. Please login again.");
+      } else {
+        alert("Could not verify profile right now. Please try again.");
+      }
+      return false;
     } finally {
-      setProfileLoaded(true);
+      setCheckingProfile(false);
     }
   };
 
-  const handleCreateClick = () => {
-    if (!profileLoaded || !isActive) return;
+  const handleCreateClick = async () => {
+    const canProceed = await ensureActiveProfile();
+    if (!canProceed) return;
     setShowModal(true);
   };
 
   const handleJoinRequest = async (tripId) => {
-    if (!profileLoaded || !isActive) {
-      alert("Complete your profile to join public trips.");
-      return;
-    }
+    const canProceed = await ensureActiveProfile();
+    if (!canProceed) return;
+
     setJoinLoadingId(tripId);
     try {
       await api.post("/join-requests/send", { tripId });
@@ -120,7 +110,7 @@ export default function Home() {
           </div>
           <button
             onClick={handleCreateClick}
-            disabled={!profileLoaded || !isActive}
+            disabled={checkingProfile || isActive === false}
             className="p-2.5 rounded-xl bg-[var(--accent)] text-white hover:opacity-90 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
             <Plus size={18} />
@@ -146,9 +136,9 @@ export default function Home() {
           </div>
           <button
             onClick={handleCreateClick}
-            disabled={!profileLoaded || !isActive}
+            disabled={checkingProfile || isActive === false}
             title={
-              !isActive
+              isActive === false
                 ? "Complete your profile first"
                 : "Create a new trip"
             }
@@ -159,7 +149,7 @@ export default function Home() {
           </button>
         </div>
 
-        {profileLoaded && !isActive && (
+        {isActive === false && (
           <p className="mb-4 text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3">
             Complete your profile to create trips and join public trips.
           </p>
@@ -177,7 +167,7 @@ export default function Home() {
                 trip={t}
                 joinStatus={joinMap[t._id]}
                 onJoinRequest={handleJoinRequest}
-                joinDisabled={!profileLoaded || !isActive}
+                joinDisabled={checkingProfile || isActive === false}
                 joinLoading={joinLoadingId === t._id}
               />
             ))}

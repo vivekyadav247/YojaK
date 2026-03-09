@@ -18,6 +18,8 @@ export default function Invites() {
   const [received, setReceived] = useState([]);
   const [sent, setSent] = useState([]);
   const [joinRequests, setJoinRequests] = useState([]);
+  const [joinRequestsLoaded, setJoinRequestsLoaded] = useState(false);
+  const [joinRequestsLoading, setJoinRequestsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("received");
 
@@ -30,23 +32,34 @@ export default function Invites() {
   const [respondError, setRespondError] = useState(null);
 
   useEffect(() => {
-    Promise.all([
-      api.get("/invites/received"),
-      api.get("/invites/sent"),
-      api.get("/trips/trips"),
-      api.get("/profile"),
-    ])
-      .then(([r, s, t, p]) => {
+    Promise.all([api.get("/invites/received"), api.get("/invites/sent"), api.get("/trips/trips")])
+      .then(([r, s, t]) => {
         setReceived(r.data ?? []);
         setSent(s.data ?? []);
         const tripList = t.data.trips ?? t.data ?? [];
         setTrips(tripList);
         if (tripList.length) setTripId(tripList[0]._id);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
-        const currentUserId = (p.data.user ?? p.data)?._id?.toString();
+  useEffect(() => {
+    if (loading || tab !== "joinRequests" || joinRequestsLoaded || joinRequestsLoading) {
+      return;
+    }
 
-        // Fetch join requests only for trips where current user is owner/editor
-        const managedTrips = tripList.filter((tr) =>
+    const loadJoinRequests = async () => {
+      setJoinRequestsLoading(true);
+      try {
+        const profileRes = await api.get("/profile");
+        const currentUserId = (profileRes.data.user ?? profileRes.data)?._id?.toString();
+        if (!currentUserId || !trips.length) {
+          setJoinRequests([]);
+          return;
+        }
+
+        const managedTrips = trips.filter((tr) =>
           tr.members?.some((m) => {
             const memberId = (m.user?._id || m.user)?.toString();
             const role = m.role;
@@ -57,20 +70,25 @@ export default function Invites() {
           }),
         );
 
-        if (managedTrips.length) {
-          Promise.all(
-            managedTrips.map((tr) => api.get(`/join-requests/trip/${tr._id}`)),
-          )
-            .then((results) => {
-              const all = results.flatMap((res) => res.data ?? []);
-              setJoinRequests(all);
-            })
-            .catch(() => {});
+        if (!managedTrips.length) {
+          setJoinRequests([]);
+          return;
         }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+
+        const results = await Promise.all(
+          managedTrips.map((tr) => api.get(`/join-requests/trip/${tr._id}`)),
+        );
+        setJoinRequests(results.flatMap((res) => res.data ?? []));
+      } catch {
+        setJoinRequests([]);
+      } finally {
+        setJoinRequestsLoaded(true);
+        setJoinRequestsLoading(false);
+      }
+    };
+
+    loadJoinRequests();
+  }, [loading, tab, joinRequestsLoaded, joinRequestsLoading, trips]);
 
   const respond = async (inviteId, status) => {
     setRespondError(null);
@@ -119,10 +137,7 @@ export default function Invites() {
       });
       setSent((prev) => [data, ...prev]);
       setEmailOrMobile("");
-      const msg = data.receiver
-        ? "Invite sent!"
-        : "Invite email sent! They'll see it once they sign up.";
-      setSendMsg({ type: "success", text: msg });
+      setSendMsg({ type: "success", text: "Invite sent!" });
     } catch (err) {
       setSendMsg({
         type: "error",
@@ -297,7 +312,11 @@ export default function Invites() {
               ))
             ))}
           {tab === "joinRequests" &&
-            (joinRequests.length === 0 ? (
+            (joinRequestsLoading ? (
+              <div className="flex justify-center py-10">
+                <Loader2 className="animate-spin text-[var(--primary)]" size={24} />
+              </div>
+            ) : joinRequests.length === 0 ? (
               <Empty text="No pending join requests" />
             ) : (
               joinRequests.map((jr) => (
